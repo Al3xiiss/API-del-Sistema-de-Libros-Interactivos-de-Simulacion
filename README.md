@@ -20,7 +20,7 @@ Aplicación web y móvil, acompañada de su API REST, orientada a administrar y 
 *(Esta sección se expandirá con la documentación del EP 1.2, abordando la fragmentación de la información y las necesidades psicosociales).*
 
 ##  Principales Funcionalidades
-A continuación se detallan las funcionalidades clave del sistema, separadas de los flujos básicos de registro e inicio de sesión[cite: 1]:
+A continuación se detallan las funcionalidades clave del sistema, separadas de los flujos básicos de registro e inicio de sesión[:
 - **RF-01 Gestión de Libros:** Administración completa (crear, editar, eliminar) del catálogo de libros.
 - **RF-02 Navegación de Capítulos:** Acceso estructurado al contenido narrativo.
 - **RF-03 Ejecución de Simulación:** Activación de entornos interactivos.
@@ -31,10 +31,10 @@ A continuación se detallan las funcionalidades clave del sistema, separadas de 
 
 ##  Tecnologías y Herramientas
 - **Frontend:** Ionic Framework con React[cite: 1].
-- **Backend (Próximas entregas):** Node.js (Express) o Flask (Python)[cite: 1].
-- **Base de Datos:** PostgreSQL o MySQL (Relacional)[cite: 1].
-- **Seguridad:** JSON Web Tokens (JWT) y encriptación bcrypt[cite: 1].
-- **Despliegue:** Capacitor (Web/Móvil) y Docker (Contenedores)[cite: 1].
+- **Backend (Próximas entregas):** Node.js (Express) o Flask (Python).
+- **Base de Datos:** PostgreSQL o MySQL (Relacional).
+- **Seguridad:** JSON Web Tokens (JWT) y encriptación bcrypt.
+- **Despliegue:** Capacitor (Web/Móvil) y Docker (Contenedores).
 
 ##  Instrucciones de Instalación y Ejecución
 ### Prerrequisitos

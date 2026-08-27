@@ -6,7 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 
-## 👥 Equipo de Desarrollo y Responsabilidades
+##  Equipo de Desarrollo y Responsabilidades
 - **Alexis Escobar**: Desarrollo de código frontend (Ionic + React), estructuración técnica y lógica de componentes.
 - **Gabriel Fuentes**: Redacción de informes, justificación del problema, investigación de fuentes y documentación.
 - **Geraldine Allende**: Diseño de UI/UX, creación de mockups en Figma y modelado de diagramas.
@@ -36,7 +36,7 @@ A continuación se detallan las funcionalidades clave del sistema, separadas de 
 - **Seguridad:** JSON Web Tokens (JWT) y encriptación bcrypt[cite: 1].
 - **Despliegue:** Capacitor (Web/Móvil) y Docker (Contenedores)[cite: 1].
 
-## 🚀 Instrucciones de Instalación y Ejecución
+##  Instrucciones de Instalación y Ejecución
 ### Prerrequisitos
 - [Node.js](https://nodejs.org/) (v18 o superior recomendado)
 - Ionic CLI: 

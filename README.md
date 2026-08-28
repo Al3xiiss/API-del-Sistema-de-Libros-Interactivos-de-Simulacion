@@ -150,3 +150,86 @@ Un sistema de libros interactivos aporta valor al transformar la lectura pasiva 
 * **Navegación:** Conduce a subrutas de creación y edición (ej. /admin/books/create).
 * **Versiones:** Móvil (prioriza estadísticas); Web (tablas de datos densas para edición).
 * **Estados y Validaciones:** Diálogos IonAlert obligatorios antes de eliminar cualquier contenido.
+
+## Arquitectura de Navegación y Experiencia de Usuario (EP 1.4)
+
+### 1. Mapa de Rutas del Sistema
+
+**Rutas Públicas**
+* `/` — Redirección automática a `/login`
+* `/login` — Inicio de sesión
+* `/register` — Registro de nuevo usuario
+
+**Rutas Protegidas (Usuario/Paciente)**
+* `/home` — Inicio y biblioteca de libros
+* `/books` — Listado completo de libros
+* `/books/:id` — Detalle del libro y sus capítulos
+* `/chapters/:id` — Lectura interactiva del capítulo
+* `/simulation/:id` — Entorno de simulación narrativa
+* `/decision/:id` — Pantalla de toma de decisiones
+* `/characters` — Galería de personajes
+* `/resources` — Recursos multimedia de apoyo
+* `/progress` — Seguimiento de progreso y estadísticas
+* `/profile` — Gestión del perfil de usuario
+
+**Rutas Protegidas (Administrador)**
+* `/admin` — Panel principal de administración
+* `/admin/books` — Gestión de libros
+* `/admin/books/create` — Creación de libro
+* `/admin/books/:id/edit` — Edición de libro
+* `/admin/chapters` — Gestión de capítulos
+* `/admin/simulations` — Gestión de simulaciones
+* `/admin/characters` — Gestión de personajes
+* `/admin/resources` — Gestión de recursos multimedia
+* `/admin/progress` — Estadísticas globales de usuarios
+* `/unauthorized` — Pantalla de acceso denegado por rol
+
+### 2. Jerarquía de Vistas y Layouts
+La aplicación utiliza un enfoque de componentes contenedores (Layouts) para encapsular la navegación, permitiendo que las vistas hoja (leaf pages) se rendericen dinámicamente en el centro.
+
+* **UserLayout:** Contenedor principal para pacientes. Envuelve las rutas de paciente (`/home`, `/books`, etc.) e inyecta la navegación inferior (móvil) o lateral (web).
+* **AdminLayout:** Contenedor exclusivo para administradores. Maneja un menú lateral dedicado a las entidades del sistema (Libros, Capítulos, Usuarios).
+* **Vistas Hoja (Leaf Pages):** Componentes como `ChapterPage` o `SimulationPage` que se montan dentro del `IonRouterOutlet` del Layout correspondiente.
+
+### 3. Restricciones y Redirecciones por Rol
+* **Usuario no autenticado:** Cualquier intento de acceder a rutas protegidas redirige forzosamente a `/login`.
+* **Usuario autenticado en rutas públicas:** Si un usuario con sesión activa visita `/login` o `/register`, es redirigido a `/home` o `/admin` según su rol.
+* **Paciente en rutas administrativas:** Redirección inmediata a `/unauthorized`.
+* **Administrador en rutas de paciente:** Se permite el acceso en modo lectura. Justificación: El administrador (psicooncólogo/editor) necesita validar visualmente cómo se despliega el contenido que acaba de crear.
+
+### 4. Navegación Adaptativa por Dispositivo
+El componente contenedor detecta la plataforma para ajustar la interfaz sin duplicar lógica:
+* **Dispositivos Móviles:** Se utiliza `IonTabs` anclado en la parte inferior (`IonTabBar`). Esto facilita la navegación con los pulgares, un detalle de accesibilidad crucial para pacientes que puedan presentar debilidad motriz o administren sus terapias con una mano.
+* **Versión Web (Escritorio):** Se emplea un `IonMenu` lateral, fijo en pantallas grandes y colapsable en pantallas medianas. Aprovecha el espacio horizontal para mostrar mayor densidad de opciones, ideal para el trabajo administrativo.
+
+### 5. Flujos de Tareas Principales (Task Flows)
+
+**Flujo 1: Lectura y Toma de Decisión (Paciente)**
+Inicio de sesión -> `/home` (Selecciona libro) -> `/books/:id` (Selecciona capítulo) -> `/chapters/:id` (Lee narrativa) -> `/simulation/:id` (Inicia simulación) -> `/decision/:id` (Elige opción) -> Guarda progreso y avanza.
+
+**Flujo 2: Consumo de Recursos Multimedia (Paciente)**
+`/home` -> `/books/:id` -> `/resources` (Abre galería de medios del capítulo) -> Reproduce video/audio -> `IonBackButton` (Retorna a la lectura sin perder el estado).
+
+**Flujo 3: Revisión de Progreso (Paciente)**
+Inicio de sesión -> Navegación en Tab/Menú -> `/progress` (Visualiza gráficos de capítulos completados y decisiones previas) -> Retorno al inicio.
+
+**Flujo 4: Creación de Contenido Narrativo (Administrador)**
+Inicio de sesión -> `/admin` -> `/admin/books/create` (Crea libro base) -> `/admin/chapters` (Agrega texto y lógica booleana) -> `/admin/simulations` (Asocia personajes y opciones) -> Guarda y publica.
+
+### 6. Puntos Críticos de Interacción
+
+1. **El momento de la decisión en la simulación:** 
+   * *Fricción:* Riesgo de toques accidentales o ansiedad ante opciones definitorias. 
+   * *Solución:* Diseño con tarjetas (`IonCard`) amplias. Requiere una selección (que resalta la tarjeta visualmente) y luego presionar un botón explícito de confirmación en la parte inferior.
+2. **Carga de recursos multimedia (Audio/Video):**
+   * *Fricción:* Conexiones lentas a internet en recintos hospitalarios.
+   * *Solución:* Implementación de `IonSkeletonText` durante la carga de la interfaz y `IonSpinner` en el reproductor. Manejo de estado vacío si el recurso falla, ofreciendo un botón de recarga.
+3. **Primer acceso del paciente (Empty State):**
+   * *Fricción:* Confusión al no tener historial de lectura.
+   * *Solución:* En lugar de una pantalla en blanco, la ruta `/home` mostrará una ilustración cálida invitando a explorar la biblioteca mediante un botón Call-to-Action destacado.
+
+### 7. Justificación Técnica de la Arquitectura
+* **Usabilidad oncológica:** Minimizar la carga cognitiva manteniendo estructuras predecibles (Layouts constantes) y controles al alcance del dedo (IonTabs).
+* **Eficiencia:** El uso de React Router con `IonRouterOutlet` permite mantener el estado de navegación de Ionic (animaciones, historial de vistas) sin recargar el DOM.
+* **Escalabilidad:** Encapsular la lógica en Layouts independientes permite crecer el panel de administración sin sobrecargar el bundle del paciente.
+* **Seguridad:** Las validaciones de ruta actúan como primera barrera (Frontend), complementando la futura verificación estricta de tokens en la API REST.

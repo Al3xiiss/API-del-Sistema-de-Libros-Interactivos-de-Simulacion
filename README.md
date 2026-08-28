@@ -13,7 +13,7 @@
 * **Backend (a desarrollar en EP2):** API REST, base de datos relacional, autenticación JWT.
 * **Documentación y gestión:** README, ramas, control de versiones, evidencia de avance.
 
-## Requerimientos Funcionales (RF)
+## Requerimientos Funcionales (RF) (EP 1.1)
 
 | ID | Nombre | Descripción | Actor/Rol | Precondiciones | Flujo Principal | Resultado Esperado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |

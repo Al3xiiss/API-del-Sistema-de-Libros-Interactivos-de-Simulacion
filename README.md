@@ -1,4 +1,17 @@
 # API-del-Sistema-de-Libros-Interactivos-de-Simulación
+| Nombre | Rol en el proyecto | 
+| :--- | :--- | 
+| Alexis Escobar | Frontend / Ionic + React |
+| Trabajo Grupal | Backend / API REST (EP2) | 
+| Geraldine Allende | UI/UX y Figma | 
+| Gabriel Fuentes | Documentación y gestión | 
+
+**Distribución de responsabilidades**
+
+* **Frontend (Ionic + React):** Estructura de vistas, componentes, navegación con React Router .
+* **UI/UX y Figma:** Mockups móvil/web, flujo de navegación, jerarquía visual.
+* **Backend (a desarrollar en EP2):** API REST, base de datos relacional, autenticación JWT.
+* **Documentación y gestión:** README, ramas, control de versiones, evidencia de avance.
 
 ## Requerimientos Funcionales (RF)
 

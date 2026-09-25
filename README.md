@@ -1,4 +1,4 @@
-****# API del Sistema de Libros Interactivos de Simulación
+# API del Sistema de Libros Interactivos de Simulación
 
 # Presentado por:
 - Alexis Escobar — Frontend / Ionic + React

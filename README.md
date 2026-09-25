@@ -1,4 +1,4 @@
-# API del Sistema de Libros Interactivos de Simulación
+****# API del Sistema de Libros Interactivos de Simulación
 
 # Presentado por:
 - Alexis Escobar — Frontend / Ionic + React
@@ -511,7 +511,7 @@ Las validaciones de ruta actúan como primera barrera (Frontend), complementando
 
 ---
 ## Bocetos UI/UX
-[Figma - Prototipo de UI/UX]()
+[Figma - Prototipo de UI/UX](https://www.figma.com/design/V9QFnXbBVuZYb6xRnxik6c/EP1_Prototipo_Libros_Interactivos?t=Pt8J2s9rAKZ6ZA4Y-0)
 
 ### Criterios de diseño
 - **Paleta de colores:** Tonos tranquilizadores (violetas suaves, azules serenos, verdes apagados). Contraste estricto WCAG AA (mínimo 4.5:1) para evitar fatiga visual.

@@ -1,0 +1,381 @@
+/* Estilos globales del proyecto. Tamaño base 16px (README: mínimo 16px en móvil). */
+html {
+  font-size: 16px;
+}
+
+/* Botones y filas grandes: la proto-persona Elena se frustra con botones pequeños. */
+ion-button {
+  min-height: 48px;
+  --border-radius: 12px;
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+ion-item {
+  --min-height: 56px;
+}
+ion-card {
+  border-radius: 16px;
+}
+
+/* ---------- Contenedores ---------- */
+.page-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.page-container.narrow {
+  max-width: 600px;
+}
+.reading {
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: var(--space-1) 0 var(--space-2);
+}
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: var(--space-3) 0 var(--space-1);
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  margin: 0 0 var(--space-1);
+}
+.small-note {
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+}
+.lead {
+  font-size: 1.125rem;
+  margin: var(--space-3) 0;
+}
+.form-error {
+  font-size: 0.875rem;
+  margin: 4px 0 var(--space-2);
+}
+.form-stack,
+.auth-form form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.stacked-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 480px;
+}
+.footer-actions {
+  --padding-start: var(--space-2);
+  --padding-end: var(--space-2);
+  --padding-top: var(--space-1);
+  --padding-bottom: var(--space-1);
+}
+.footer-actions ion-button {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.card-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+.admin-card-detail {
+  margin-bottom: var(--space-2) !important;
+}
+.card-title {
+  font-size: 1.125rem !important;
+  font-weight: 700;
+  color: var(--ion-text-color);
+}
+
+/* ---------- Login / registro ---------- */
+.auth-layout {
+  min-height: 100%;
+  display: flex;
+}
+.auth-hero {
+  display: none;
+}
+.auth-form {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-2);
+}
+.auth-form h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+.demo-note {
+  display: block;
+  margin-top: var(--space-3);
+  padding: var(--space-2);
+  border-radius: 12px;
+  background: var(--ion-color-light);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.password-rules {
+  list-style: none;
+  padding: 0;
+  margin: -8px 0 0;
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+}
+.password-rules li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.password-rules li.ok {
+  color: var(--ion-color-success);
+}
+/* Web: pantalla dividida, imagen relajante + formulario (README, pantalla 1) */
+@media (min-width: 992px) {
+  .auth-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    padding: var(--space-4);
+    color: #fff;
+    background: linear-gradient(160deg, #5b4a8b 0%, #3f6e55 100%);
+  }
+  .auth-hero h2 {
+    font-size: 2.25rem;
+    font-weight: 700;
+  }
+  .auth-hero p {
+    font-size: 1.25rem;
+  }
+  .auth-form {
+    flex: 1;
+    align-self: center;
+  }
+}
+
+/* ---------- Libros ---------- */
+.book-cover {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 3rem;
+  font-weight: 700;
+}
+.book-cover-large {
+  height: 200px;
+  border-radius: 16px;
+}
+.book-card ion-card-title {
+  font-size: 1.125rem;
+}
+.continue-card {
+  margin: 0;
+  background: var(--ion-color-light);
+}
+.continue-card h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ion-text-color);
+}
+.continue-card ion-progress-bar {
+  margin: var(--space-2) 0;
+}
+.skeleton-hero {
+  height: 160px;
+  border-radius: 16px;
+}
+.skeleton-card {
+  height: 240px;
+  border-radius: 16px;
+}
+
+/* ---------- Lectura, simulación y decisiones ---------- */
+.illustration {
+  height: 180px;
+  margin: var(--space-3) 0;
+  border-radius: 16px;
+  background: var(--ion-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: var(--ion-color-medium);
+}
+.character-card {
+  margin: 0 auto;
+  max-width: 360px;
+}
+.character-avatar {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto var(--space-2);
+  background: var(--ion-color-primary);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.character-card h2 {
+  font-weight: 700;
+  color: var(--ion-text-color);
+}
+.option-card {
+  margin: 0 0 var(--space-2);
+  border: 2px solid transparent;
+}
+.option-card.selected {
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-light);
+}
+.option-card-content {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  font-size: 1rem;
+  color: var(--ion-text-color);
+}
+.option-card-content ion-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+.option-card-content p {
+  margin-top: 4px;
+}
+@media (min-width: 768px) {
+  .option-card {
+    margin: 0 var(--space-1) var(--space-2);
+    height: calc(100% - var(--space-2));
+  }
+}
+.outcome-card {
+  margin: var(--space-2) 0;
+}
+
+/* ---------- Multimedia ---------- */
+.media-player {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.media-screen {
+  height: 200px;
+  background: #2b2540;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  font-size: 1rem;
+}
+.media-screen ion-icon {
+  font-size: 3rem;
+}
+.media-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) 0 0;
+}
+.media-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+}
+@media (min-width: 992px) {
+  .resources-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-3);
+    align-items: start;
+  }
+  .resources-list {
+    margin-top: 0;
+  }
+}
+
+/* ---------- Estadísticas ---------- */
+.stat-card {
+  margin: 0 4px var(--space-1);
+  height: calc(100% - var(--space-1));
+}
+.stat-card ion-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-2) var(--space-1);
+}
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+}
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+}
+.progress-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-1) 0;
+}
+
+/* ---------- Estados vacíos y varios ---------- */
+.empty-state {
+  text-align: center;
+  padding: var(--space-4) var(--space-2);
+  max-width: 480px;
+  margin: 0 auto;
+}
+.empty-state-icon {
+  font-size: 3.5rem;
+  color: var(--ion-color-primary);
+}
+.empty-state h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.privacy-note {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  color: var(--ion-color-medium);
+  margin: var(--space-2) var(--space-2) var(--space-3);
+}
+ion-item.selected {
+  --background: var(--ion-color-light);
+  --color: var(--ion-color-primary);
+  font-weight: 600;
+}
+ion-menu ion-content,
+ion-menu ion-list {
+  --background: #ffffff;
+  background: #ffffff;
+}
+.menu-list ion-list-header {
+  font-size: 1.25rem;
+  font-weight: 700;
+}

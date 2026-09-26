@@ -1,2 +1,68 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/*
+ * Paleta del proyecto (README, "Criterios de diseño"): violetas suaves y verdes apagados.
+ * Todos los colores con texto blanco superan el contraste WCAG AA 4.5:1.
+ * Guía de Ionic: https://ionicframework.com/docs/theming/colors
+ */
+:root {
+  /* Violeta (acciones principales) — contraste con blanco 7.5:1 */
+  --ion-color-primary: #5b4a8b;
+  --ion-color-primary-rgb: 91, 74, 139;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #50417a;
+  --ion-color-primary-tint: #6b5c97;
+
+  /* Verde apagado — contraste con blanco 5.9:1 */
+  --ion-color-secondary: #3f6e55;
+  --ion-color-secondary-rgb: 63, 110, 85;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #37614b;
+  --ion-color-secondary-tint: #527d66;
+
+  --ion-color-success: #2e7d4f;
+  --ion-color-success-rgb: 46, 125, 79;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #286e46;
+  --ion-color-success-tint: #438a61;
+
+  --ion-color-danger: #b3261e;
+  --ion-color-danger-rgb: 179, 38, 30;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #9e211a;
+  --ion-color-danger-tint: #bb3c35;
+
+  /* Gris con contraste suficiente para textos secundarios */
+  --ion-color-medium: #5f5a6b;
+  --ion-color-medium-rgb: 95, 90, 107;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #54505e;
+  --ion-color-medium-tint: #6f6b7a;
+
+  --ion-color-light: #f1edf8;
+  --ion-color-light-rgb: 241, 237, 248;
+  --ion-color-light-contrast: #1f1b2d;
+  --ion-color-light-contrast-rgb: 31, 27, 45;
+  --ion-color-light-shade: #d4d1da;
+  --ion-color-light-tint: #f2eff9;
+
+  --ion-background-color: #faf8fd;
+  --ion-background-color-rgb: 250, 248, 253;
+  --ion-text-color: #1f1b2d;
+  --ion-text-color-rgb: 31, 27, 45;
+  --ion-toolbar-background: #ffffff;
+  --ion-tab-bar-background: #ffffff;
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+
+  --ion-font-family: 'Inter', 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Sistema de espaciado en múltiplos de 8px */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+}

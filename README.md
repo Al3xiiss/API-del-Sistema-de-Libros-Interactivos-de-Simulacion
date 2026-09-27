@@ -30,11 +30,9 @@
     - [Justificación Técnica](#justificación-técnica)
 6. [Bocetos UX/UI](#bocetos-uiux)
 7. [Librerías y Tecnologías](#librerías-usadas-con-react-ionic)
-8. [Instalación y configuración](#instalación-y-configuración)
-    - [Ejecución y uso](#ejecución-y-uso)
     - [Estructura del proyecto](#estructura-del-proyecto)
-9. [Uso de herramientas de IA](#uso-de-herramientas-de-ia)
-10. [Referencias](#referencias)
+8. [Uso de herramientas de IA](#uso-de-herramientas-de-ia)
+9. [Referencias](#referencias)
 
 ## Descripción general del sistema
 El Sistema de Libros Interactivos de Simulación es una aplicación multiplataforma (web y móvil) desarrollada con Ionic + React que acompaña emocionalmente a pacientes en tratamiento oncológico mediante historias narrativas. El paciente lee libros organizados en capítulos, participa en simulaciones donde un personaje enfrenta situaciones cotidianas, toma decisiones que cambian el desenlace, reproduce recursos multimedia de apoyo y revisa su progreso. Los administradores (psicooncólogos) gestionan los libros y los personajes desde un panel propio.

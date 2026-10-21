@@ -6,6 +6,11 @@ import { pool } from './config/db.js';
 
 const PORT = process.env.PORT || 3000;
 
+if (!process.env.JWT_SECRET) {
+  console.error('Falta JWT_SECRET en el archivo .env');
+  process.exit(1);
+}
+
 try {
   await pool.query('SELECT 1');
   console.log('Conectado a PostgreSQL');

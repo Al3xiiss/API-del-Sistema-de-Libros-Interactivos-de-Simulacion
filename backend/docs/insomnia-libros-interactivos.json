@@ -1,0 +1,2788 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-24T12:00:00Z",
+  "__export_source": "insomnia.desktop.app:v13.3.1",
+  "resources": [
+    {
+      "_id": "__WORKSPACE_ID__",
+      "_type": "workspace",
+      "parentId": null,
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "API Libros Interactivos",
+      "scope": "collection",
+      "description": "Pruebas de la API REST del Sistema de Libros Interactivos de Simulación (EP2). Requiere el backend corriendo en http://localhost:3000 con la base de datos cargada desde database.sql."
+    },
+    {
+      "_id": "env_a934a14ef634108430326bb7f4ff105c",
+      "_type": "environment",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3000/api"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_6055ab9a042c0f876e5226e4da24583a",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "0. Estado del servidor",
+      "description": "Comprueba que la API está corriendo y conectada a PostgreSQL.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 100
+    },
+    {
+      "_id": "req_359e51743e304583e2cf7b933972aea6",
+      "_type": "request",
+      "parentId": "fld_6055ab9a042c0f876e5226e4da24583a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Health check",
+      "method": "GET",
+      "url": "{{ _.base_url }}/health",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nDevuelve la hora de la base de datos y cuántos libros hay. No requiere sesión.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.estado).to.equal('ok');\n});"
+    },
+    {
+      "_id": "fld_4392a1c890c653e72695df90bbd6a091",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "1. Autenticación",
+      "description": "Registro, inicio de sesión con JWT y perfil. Las peticiones de las demás carpetas obtienen el token automáticamente desde \"Login paciente\" o \"Login admin\".",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 200
+    },
+    {
+      "_id": "req_46a96a79cdf7cf159d0f040a452b2155",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Login paciente",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"paciente@demo.cl\",\n  \"password\": \"Paciente123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nInicia sesión con la cuenta de prueba del paciente. Devuelve el token JWT (dura 2 horas) y los datos del usuario.\n\nLas peticiones con token de paciente usan la respuesta de esta petición.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.token).to.be.a('string');\n  insomnia.expect(insomnia.response.json().data.usuario.rol).to.equal('patient');\n});"
+    },
+    {
+      "_id": "req_8eae4dd6d4f150cd8e0588f670983037",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Login admin",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@demo.cl\",\n  \"password\": \"Admin12345\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nInicia sesión con la cuenta de prueba del administrador.\n\nLas peticiones con token de administrador usan la respuesta de esta petición.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.usuario.rol).to.equal('admin');\n});"
+    },
+    {
+      "_id": "req_4dac0871347e5ffd8e326d19c4e1c861",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Login con contraseña incorrecta",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"paciente@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized**\n\nMismo mensaje si el correo no existe o si la contraseña está mal: no revela qué correos están registrados.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized', () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});"
+    },
+    {
+      "_id": "req_0d21b0982b0ca0a85d1056762eea9a32",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Registro de paciente (intenta ser admin)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"alias\": \"paciente_insomnia\",\n  \"email\": \"paciente.insomnia@demo.cl\",\n  \"password\": \"Clave1234\",\n  \"rol\": \"admin\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created o 409 Conflict**\n\nCrea un paciente. Aunque el cuerpo pide \"rol\": \"admin\", la API siempre crea pacientes.\n\nLa primera vez responde 201. Si ya se ejecutó antes, responde 409 porque el alias ya existe.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created o 409 Conflict', () => {\n  insomnia.expect([201, 409]).to.include(insomnia.response.code);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  if (insomnia.response.code === 201) {\n    insomnia.expect(insomnia.response.json().data.rol).to.equal('patient');\n  }\n});"
+    },
+    {
+      "_id": "req_a1a27d5da7bb521b1e8351a07f2f8304",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Registro repetido",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"alias\": \"paciente_insomnia\",\n  \"email\": \"paciente.insomnia@demo.cl\",\n  \"password\": \"Clave1234\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 409 Conflict**\n\nEl alias y el correo ya existen: PostgreSQL rechaza el valor repetido (UNIQUE) y la API responde 409.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 409 Conflict', () => {\n  insomnia.expect(insomnia.response.code).to.equal(409);\n});"
+    },
+    {
+      "_id": "req_446e4ddf34bbad6be17e73657ebb098c",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Registro con datos inválidos",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/register",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"alias\": \"a\",\n  \"email\": \"malo\",\n  \"password\": \"corta\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nAlias muy corto, correo inválido y contraseña débil: responde 400 con la lista de errores en \"detalles\".\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().detalles.length).to.equal(3);\n});"
+    },
+    {
+      "_id": "req_0b8e381afd7be64a03105ad6f5cb026f",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mi perfil",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nDatos del usuario dueño del token.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.alias).to.equal('elena_r');\n});"
+    },
+    {
+      "_id": "req_bf458827a364d065a488c18d97a5da6c",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mi perfil sin token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized**\n\nSin el encabezado Authorization la API responde 401.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized', () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});"
+    },
+    {
+      "_id": "req_c9f9f3ac99361810a700ed759627db78",
+      "_type": "request",
+      "parentId": "fld_4392a1c890c653e72695df90bbd6a091",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mi perfil con token falso",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6Miwicm9sIjoiYWRtaW4ifQ.firma-falsa",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 90,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized**\n\nUn token alterado o vencido no pasa la verificación de la firma: responde 401.\n\nToken: falso (pide ser admin, pero la firma no es válida).",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized', () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});"
+    },
+    {
+      "_id": "fld_a227b9ef991c03d059491c6250cfa062",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "2. Libros",
+      "description": "CRUD de libros. Ver: cualquier usuario con sesión. Crear, editar y eliminar: solo administrador.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 300
+    },
+    {
+      "_id": "req_1e50c45eed6eab9d5bec68748d10b9b2",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Listar libros",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nTodos los libros con su cantidad de capítulos (total_capitulos).\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_5082334ed26ac71107a3917861a063b4",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver libro 1",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros/1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nUn libro por su id.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_c6e7cbcb17b6c540ca04e00d05417ef9",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver libro inexistente",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros/99",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nEl libro no existe.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "req_2cf7dc5bea928f56319bcb78898a2119",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver libro con id inválido",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros/abc",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nEl id debe ser un número entero positivo.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_e11ab2c42f38314caf8b13a1dfc35534",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Listar libros sin token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized**\n\nTodas las rutas de libros requieren sesión.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized', () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});"
+    },
+    {
+      "_id": "req_5d2af98c190f806e1661af64f1f66a36",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear libro como paciente",
+      "method": "POST",
+      "url": "{{ _.base_url }}/libros",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Libro de prueba\",\n  \"sinopsis\": \"Una sinopsis de prueba para el CRUD\",\n  \"color_portada\": \"#3F6E55\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 403 Forbidden**\n\nUn paciente no puede crear libros.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 403 Forbidden', () => {\n  insomnia.expect(insomnia.response.code).to.equal(403);\n});"
+    },
+    {
+      "_id": "req_2d75fc753b421fafe84c2b2c9d3f4f42",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear libro",
+      "method": "POST",
+      "url": "{{ _.base_url }}/libros",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Libro de prueba\",\n  \"sinopsis\": \"Una sinopsis de prueba para el CRUD\",\n  \"color_portada\": \"#3F6E55\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nCrea un libro. Las peticiones de editar y eliminar usan el id que devuelve esta.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});"
+    },
+    {
+      "_id": "req_4d7dc6d5138ccf1f7da6e618582fbbea",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear libro con datos inválidos",
+      "method": "POST",
+      "url": "{{ _.base_url }}/libros",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"ab\",\n  \"sinopsis\": \"corta\",\n  \"color_portada\": \"rojo\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nTítulo muy corto, sinopsis muy corta y color con formato inválido.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_2db2613e033de7266e0f79cbdefbbc96",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Editar libro creado",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/libros/{% response 'body', 'req_2d75fc753b421fafe84c2b2c9d3f4f42', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"Libro editado\",\n  \"sinopsis\": \"Sinopsis editada de prueba\",\n  \"color_portada\": \"#B3261E\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 90,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nEdita el libro creado en \"Crear libro\".\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_496a48d36aff3fbae45237e4e6eb6a4e",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar libro como paciente",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/libros/{% response 'body', 'req_2d75fc753b421fafe84c2b2c9d3f4f42', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 100,
+      "isPrivate": false,
+      "description": "**Esperado: 403 Forbidden**\n\nUn paciente no puede eliminar libros.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 403 Forbidden', () => {\n  insomnia.expect(insomnia.response.code).to.equal(403);\n});"
+    },
+    {
+      "_id": "req_d90cbe295d103ea3301b25319ce50105",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar libro creado",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/libros/{% response 'body', 'req_2d75fc753b421fafe84c2b2c9d3f4f42', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 110,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nElimina el libro de prueba. Responde 204 sin contenido. Ojo: borrar un libro borra también sus capítulos (ON DELETE CASCADE).\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "req_246af9a98b16e6aac88a290b5aa9ec96",
+      "_type": "request",
+      "parentId": "fld_a227b9ef991c03d059491c6250cfa062",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar libro ya eliminado",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/libros/{% response 'body', 'req_2d75fc753b421fafe84c2b2c9d3f4f42', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 120,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nEl libro ya no existe.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "fld_c423090c2a5488d4907508f74fd4a309",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "3. Capítulos",
+      "description": "CRUD de capítulos. Filtro opcional ?libro_id=. Crear, editar y eliminar: solo administrador.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 400
+    },
+    {
+      "_id": "req_3fee3685c5d3cda7066915ae5a6d3609",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Capítulos de un libro",
+      "method": "GET",
+      "url": "{{ _.base_url }}/capitulos?libro_id=1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nCapítulos del libro 1 ordenados por número (sin el contenido).\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.length).to.equal(5);\n});"
+    },
+    {
+      "_id": "req_ee7147b6ff0afff5335405eab5a29af8",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver capítulo 3",
+      "method": "GET",
+      "url": "{{ _.base_url }}/capitulos/3",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nCapítulo con su contenido, id de su simulación y cantidad de recursos.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_053605caa955e8686e2678a899cb6323",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Filtro con intento de inyección SQL",
+      "method": "GET",
+      "url": "{{ _.base_url }}/capitulos?libro_id=1%20OR%201%3D1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nEl filtro debe ser un número entero: el texto \"1 OR 1=1\" se rechaza antes de llegar a la base de datos.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_643d0cd01ecca5e0f54de9c2c7336305",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear capítulo (número automático)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/capitulos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"libro_id\": 3,\n  \"titulo\": \"Capítulo de prueba\",\n  \"contenido\": \"Contenido de prueba del capítulo.\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nSi no se envía \"numero\", la API usa el siguiente disponible del libro.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});"
+    },
+    {
+      "_id": "req_aa7cf7a8e153524744fe85389758d9f2",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear capítulo con número repetido",
+      "method": "POST",
+      "url": "{{ _.base_url }}/capitulos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"libro_id\": 3,\n  \"titulo\": \"Capítulo de prueba\",\n  \"contenido\": \"Contenido de prueba del capítulo.\",\n  \"numero\": 1\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 409 Conflict**\n\nEl libro 3 ya tiene un capítulo 1 (UNIQUE libro_id + numero).\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 409 Conflict', () => {\n  insomnia.expect(insomnia.response.code).to.equal(409);\n});"
+    },
+    {
+      "_id": "req_61fa451cef47ebcb30a8b5fd70e39859",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear capítulo en libro inexistente",
+      "method": "POST",
+      "url": "{{ _.base_url }}/capitulos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"libro_id\": 999,\n  \"titulo\": \"Capítulo de prueba\",\n  \"contenido\": \"Contenido de prueba del capítulo.\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nLa clave foránea libro_id apunta a un libro que no existe.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_5bcd11082369ea1d035638afa1b5a04a",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Editar capítulo creado",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/capitulos/{% response 'body', 'req_643d0cd01ecca5e0f54de9c2c7336305', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"libro_id\": 3,\n  \"titulo\": \"Capítulo editado\",\n  \"contenido\": \"Contenido editado del capítulo.\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nEdita el capítulo creado. Si no se envía \"numero\", se mantiene.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_38f23247543f7fbc6c72487e154fb385",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar capítulo creado",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/capitulos/{% response 'body', 'req_643d0cd01ecca5e0f54de9c2c7336305', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nElimina el capítulo de prueba.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "req_41340710b358a485336964e142026033",
+      "_type": "request",
+      "parentId": "fld_c423090c2a5488d4907508f74fd4a309",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver capítulo eliminado",
+      "method": "GET",
+      "url": "{{ _.base_url }}/capitulos/{% response 'body', 'req_643d0cd01ecca5e0f54de9c2c7336305', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 90,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nEl capítulo ya no existe.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "fld_762ac080398b53e320dbacfc558ef9af",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "4. Personajes",
+      "description": "CRUD de personajes. Filtros opcionales ?capitulo_id= y ?libro_id=. Crear, editar y eliminar: solo administrador.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 500
+    },
+    {
+      "_id": "req_5be4728cc6db143e807f92ebab1d6af6",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Listar personajes",
+      "method": "GET",
+      "url": "{{ _.base_url }}/personajes",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nPersonajes con el capítulo y libro al que pertenecen.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_7ef15773d890563470cb3ebbdaf76334",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Personajes de un libro",
+      "method": "GET",
+      "url": "{{ _.base_url }}/personajes?libro_id=2",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nSolo los personajes del libro 2.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_cbcfd6023b19a51288680f983e4eb894",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver personaje 1",
+      "method": "GET",
+      "url": "{{ _.base_url }}/personajes/1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nUn personaje por su id.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_96700a13f6ff42a4dff8372b1bfdd14b",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear personaje como paciente",
+      "method": "POST",
+      "url": "{{ _.base_url }}/personajes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 10,\n  \"nombre\": \"Lucía\",\n  \"descripcion\": \"Amiga de Clara.\",\n  \"atributos\": \"Alegre, paciente\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 403 Forbidden**\n\nUn paciente no puede crear personajes.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 403 Forbidden', () => {\n  insomnia.expect(insomnia.response.code).to.equal(403);\n});"
+    },
+    {
+      "_id": "req_a9b4b84c4a5608c184662bf87e288089",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear personaje",
+      "method": "POST",
+      "url": "{{ _.base_url }}/personajes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 10,\n  \"nombre\": \"Lucía\",\n  \"descripcion\": \"Amiga de Clara.\",\n  \"atributos\": \"Alegre, paciente\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nCrea un personaje en el capítulo 10.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});"
+    },
+    {
+      "_id": "req_fdedd79c2e918c179f561671882ab837",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear personaje con datos inválidos",
+      "method": "POST",
+      "url": "{{ _.base_url }}/personajes",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"nombre\": \"L\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nFalta capitulo_id y el nombre es muy corto.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_5cf7e42a13adaba62b4951154ff33362",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Editar personaje creado",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/personajes/{% response 'body', 'req_a9b4b84c4a5608c184662bf87e288089', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 10,\n  \"nombre\": \"Lucía M.\",\n  \"descripcion\": \"Amiga de Clara.\",\n  \"atributos\": \"Alegre, paciente\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nEdita el personaje creado.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_8d3cabe76a6b12e1a3b324e686157a3d",
+      "_type": "request",
+      "parentId": "fld_762ac080398b53e320dbacfc558ef9af",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar personaje creado",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/personajes/{% response 'body', 'req_a9b4b84c4a5608c184662bf87e288089', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nSi el personaje aparecía en una simulación, esta queda sin personaje (ON DELETE SET NULL).\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "5. Simulaciones y opciones",
+      "description": "Simulaciones con sus opciones de decisión. La simulación y sus opciones se crean juntas en una transacción.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 600
+    },
+    {
+      "_id": "req_ca6cb2bf5c83f53304ab5bce191097d3",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Simulaciones de un libro",
+      "method": "GET",
+      "url": "{{ _.base_url }}/simulaciones?libro_id=1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nSimulaciones del libro 1 con su cantidad de opciones.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.length).to.equal(3);\n});"
+    },
+    {
+      "_id": "req_a0c31d902f25f8491b404800cf21885b",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver simulación 1 con opciones",
+      "method": "GET",
+      "url": "{{ _.base_url }}/simulaciones/1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nSimulación con su personaje y la lista de opciones.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.opciones.length).to.equal(2);\n});"
+    },
+    {
+      "_id": "req_d26938ec8fea0f83c5d9c6e920cd32d1",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ver simulación inexistente",
+      "method": "GET",
+      "url": "{{ _.base_url }}/simulaciones/99",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nLa simulación no existe.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "req_c1c81c908d6f30b734d1b445e4becea6",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear simulación como paciente",
+      "method": "POST",
+      "url": "{{ _.base_url }}/simulaciones",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 9,\n  \"contexto\": \"Lucía invita a Clara a dar una caminata corta.\",\n  \"pregunta\": \"¿Qué responde Clara?\",\n  \"opciones\": [\n    {\n      \"texto\": \"Aceptar\",\n      \"descripcion\": \"Salir un rato\",\n      \"consecuencia\": \"Clara disfruta el aire fresco.\"\n    },\n    {\n      \"texto\": \"Descansar\",\n      \"consecuencia\": \"Clara escucha a su cuerpo y descansa.\"\n    }\n  ]\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 403 Forbidden**\n\nUn paciente no puede crear simulaciones.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 403 Forbidden', () => {\n  insomnia.expect(insomnia.response.code).to.equal(403);\n});"
+    },
+    {
+      "_id": "req_c2290f67ea1a1ed78a5edb1a85325c6c",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear simulación con 1 opción",
+      "method": "POST",
+      "url": "{{ _.base_url }}/simulaciones",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 9,\n  \"contexto\": \"Lucía invita a Clara a dar una caminata corta.\",\n  \"pregunta\": \"¿Qué responde Clara?\",\n  \"opciones\": [\n    {\n      \"texto\": \"Aceptar\",\n      \"descripcion\": \"Salir un rato\",\n      \"consecuencia\": \"Clara disfruta el aire fresco.\"\n    }\n  ]\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nUna simulación necesita entre 2 y 4 opciones.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_dd1f8a44024d97652478847e9a196b1d",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear simulación en capítulo que ya tiene una",
+      "method": "POST",
+      "url": "{{ _.base_url }}/simulaciones",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 2,\n  \"contexto\": \"Lucía invita a Clara a dar una caminata corta.\",\n  \"pregunta\": \"¿Qué responde Clara?\",\n  \"opciones\": [\n    {\n      \"texto\": \"Aceptar\",\n      \"descripcion\": \"Salir un rato\",\n      \"consecuencia\": \"Clara disfruta el aire fresco.\"\n    },\n    {\n      \"texto\": \"Descansar\",\n      \"consecuencia\": \"Clara escucha a su cuerpo y descansa.\"\n    }\n  ]\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 409 Conflict**\n\nEl capítulo 2 ya tiene simulación (UNIQUE capitulo_id).\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 409 Conflict', () => {\n  insomnia.expect(insomnia.response.code).to.equal(409);\n});"
+    },
+    {
+      "_id": "req_c2b74e3699f7c8d0319271e8a349f4d4",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear simulación con opciones",
+      "method": "POST",
+      "url": "{{ _.base_url }}/simulaciones",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 9,\n  \"contexto\": \"Lucía invita a Clara a dar una caminata corta.\",\n  \"pregunta\": \"¿Qué responde Clara?\",\n  \"opciones\": [\n    {\n      \"texto\": \"Aceptar\",\n      \"descripcion\": \"Salir un rato\",\n      \"consecuencia\": \"Clara disfruta el aire fresco.\"\n    },\n    {\n      \"texto\": \"Descansar\",\n      \"consecuencia\": \"Clara escucha a su cuerpo y descansa.\"\n    }\n  ]\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nCrea la simulación y sus 2 opciones en una transacción: si una opción falla, no queda nada guardado.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.opciones.length).to.equal(2);\n});"
+    },
+    {
+      "_id": "req_6b6f68a6e71fa76951f31c1ee6e925e4",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Editar simulación creada",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/simulaciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"contexto\": \"Lucía invita a Clara a caminar por la playa.\",\n  \"pregunta\": \"¿Qué decide Clara?\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nEdita contexto y pregunta. Las opciones tienen sus propias rutas.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_682253421ccb867a3169e0e6774cb077",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Agregar opción",
+      "method": "POST",
+      "url": "{{ _.base_url }}/simulaciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}/opciones",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"texto\": \"Llamar a una amiga\",\n  \"consecuencia\": \"Conversan un rato y Clara se siente acompañada.\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 90,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nAgrega una tercera opción.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});"
+    },
+    {
+      "_id": "req_c4bc825fdc91fa51403cfc623b7a5f8a",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Editar opción agregada",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/simulaciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}/opciones/{% response 'body', 'req_682253421ccb867a3169e0e6774cb077', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"texto\": \"Llamar a Lucía\",\n  \"consecuencia\": \"Conversan y se ríen un rato.\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 100,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nEdita la opción agregada.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_f0eaafc9a93384ac26c0cd3376092f49",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar opción agregada",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/simulaciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}/opciones/{% response 'body', 'req_682253421ccb867a3169e0e6774cb077', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 110,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nElimina la opción agregada. La simulación vuelve a tener 2 opciones.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "req_e3e266666165dd26f0fec7197b668d25",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar opción dejando menos de 2",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/simulaciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}/opciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLm9wY2lvbmVzWzBdLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 120,
+      "isPrivate": false,
+      "description": "**Esperado: 409 Conflict**\n\nUna simulación debe tener al menos 2 opciones.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 409 Conflict', () => {\n  insomnia.expect(insomnia.response.code).to.equal(409);\n});"
+    },
+    {
+      "_id": "req_b984b7fed254ac8e0a8fb02b865f3e94",
+      "_type": "request",
+      "parentId": "fld_3a9e0246b364281b924fb12d2edf9294",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar simulación creada",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/simulaciones/{% response 'body', 'req_c2b74e3699f7c8d0319271e8a349f4d4', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 130,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nElimina la simulación, sus opciones y las decisiones tomadas en ella (ON DELETE CASCADE).\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "6. Recursos multimedia",
+      "description": "CRUD de recursos (video o audio). Filtros opcionales ?capitulo_id= y ?libro_id=.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 700
+    },
+    {
+      "_id": "req_3c93ebc4a49580e731b3391daa3c7597",
+      "_type": "request",
+      "parentId": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Listar recursos",
+      "method": "GET",
+      "url": "{{ _.base_url }}/recursos",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nTodos los recursos con su capítulo.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_db172479e508546b60646a1aad51a8d7",
+      "_type": "request",
+      "parentId": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Recursos de un capítulo",
+      "method": "GET",
+      "url": "{{ _.base_url }}/recursos?capitulo_id=3",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nSolo los recursos del capítulo 3.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.length).to.equal(2);\n});"
+    },
+    {
+      "_id": "req_8140d78c7df697af7f880fb06fff18bb",
+      "_type": "request",
+      "parentId": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear recurso",
+      "method": "POST",
+      "url": "{{ _.base_url }}/recursos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 10,\n  \"tipo\": \"audio\",\n  \"titulo\": \"Audio de prueba\",\n  \"descripcion\": \"Respiración guiada corta.\",\n  \"url\": \"https://ejemplo.cl/audio.mp3\",\n  \"duracion_segundos\": 90\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nCrea un audio en el capítulo 10.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});"
+    },
+    {
+      "_id": "req_344df8b281746ff51bdd46ff3dcfb66a",
+      "_type": "request",
+      "parentId": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Crear recurso con tipo y URL inválidos",
+      "method": "POST",
+      "url": "{{ _.base_url }}/recursos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 10,\n  \"tipo\": \"imagen\",\n  \"titulo\": \"Audio de prueba\",\n  \"descripcion\": \"Respiración guiada corta.\",\n  \"url\": \"javascript:alert(1)\",\n  \"duracion_segundos\": 90\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nEl tipo debe ser \"video\" o \"audio\" y la URL debe empezar con http:// o https://.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_a3b6ca45020d60ed5f2c9010fa5a8faf",
+      "_type": "request",
+      "parentId": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Editar recurso creado",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/recursos/{% response 'body', 'req_8140d78c7df697af7f880fb06fff18bb', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 10,\n  \"tipo\": \"video\",\n  \"titulo\": \"Audio de prueba\",\n  \"descripcion\": \"Respiración guiada corta.\",\n  \"url\": null,\n  \"duracion_segundos\": 90\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nCambia el recurso a video y le quita la URL.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_5296152d96472a4f17efb4975a77740c",
+      "_type": "request",
+      "parentId": "fld_3b02511d031c63af549dd4bf8d804c0f",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar recurso creado",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/recursos/{% response 'body', 'req_8140d78c7df697af7f880fb06fff18bb', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nElimina el recurso de prueba.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "fld_bce4245741add4442769570583bdfc8b",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "7. Progreso del paciente",
+      "description": "Cada usuario trabaja solo con su propio progreso: el id sale del token, nunca del cuerpo.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 800
+    },
+    {
+      "_id": "req_41bf6259d42ea7b8928203273ef449a2",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mi progreso",
+      "method": "GET",
+      "url": "{{ _.base_url }}/progreso",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nResumen y avance por libro: capítulos completados, último capítulo abierto y decisiones.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_6f64ea6bea3aafe202f51962b79e971d",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Abrir capítulo 6",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/progreso/capitulos/6",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nSin \"completado\" solo registra que el capítulo se abrió (para \"Continúa donde lo dejaste\").\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_157799af7225391d133fbbb12eb6612f",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Completar capítulo 6",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/progreso/capitulos/6",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"completado\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nMarca el capítulo como completado.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.completado).to.equal(true);\n});"
+    },
+    {
+      "_id": "req_ddd3dd74cc2c7447a9613134005e97ab",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Progreso en capítulo inexistente",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/progreso/capitulos/999",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"completado\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nEl capítulo no existe.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "req_249e1ec5599c1aeef597814321642e9e",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Progreso con dato inválido",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/progreso/capitulos/6",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"completado\": \"quizas\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\n\"completado\" debe ser true o false.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_f40cec008d28f264307c9e61b37f9a5c",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mi progreso sin token",
+      "method": "GET",
+      "url": "{{ _.base_url }}/progreso",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized**\n\nRequiere sesión.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized', () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});"
+    },
+    {
+      "_id": "req_d7474642f6b6157e6d0030f81ad37d35",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Reiniciar libro 2",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/progreso/libros/2",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nBorra el progreso y las decisiones del paciente en el libro 2. Deja los datos como estaban antes de esta carpeta.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "fld_a95c785528994d135a51e17a679b040a",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "8. Decisiones del paciente",
+      "description": "La opción que elige el paciente en cada simulación. El id del usuario sale del token.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 900
+    },
+    {
+      "_id": "req_f4c7e25188a4798cf47798db9bd88f1c",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mis decisiones",
+      "method": "GET",
+      "url": "{{ _.base_url }}/decisiones",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nDecisiones con la pregunta, la opción elegida y su consecuencia.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_22806fb22badbe6b8c4ce597983880ab",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Decidir en simulación 4",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/decisiones/4",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"opcion_id\": 7\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nElige la opción 7. Devuelve la consecuencia que se muestra al paciente.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data.consecuencia).to.be.a('string');\n});"
+    },
+    {
+      "_id": "req_a5abd8610c1c8d48b339095387309f8d",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Cambiar decisión",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/decisiones/4",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"opcion_id\": 8\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nSi ya había decidido, se reemplaza la decisión.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_d1c5a5d298222854a598d49f4f3ebd43",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Opción de otra simulación",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/decisiones/4",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"opcion_id\": 1\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nLa opción 1 pertenece a la simulación 1 (clave foránea compuesta opcion_id + simulacion_id).\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_92bfed48230c6f522ae7ddb86434a08a",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Decidir en simulación inexistente",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/decisiones/999",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"opcion_id\": 1\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nLa simulación no existe.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "req_8bb917057295709ced6d4c858c9af36e",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Decidir sin opción",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/decisiones/4",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nFalta opcion_id.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_59e530c3792d39504131105ed86d833a",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar decisión",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/decisiones/4",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nBorra la decisión de la simulación 4.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "req_dcd296ff8b7f7320c271f6a246d7b6c4",
+      "_type": "request",
+      "parentId": "fld_a95c785528994d135a51e17a679b040a",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar decisión inexistente",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/decisiones/4",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nYa no hay decisión en esa simulación.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "fld_50dd66ac05be8e9cbb17b3812d723a5d",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "9. Estadísticas (admin)",
+      "description": "Totales para el panel de administración. Solo administrador.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1000
+    },
+    {
+      "_id": "req_f1583e85987b28676eed38853353c15d",
+      "_type": "request",
+      "parentId": "fld_50dd66ac05be8e9cbb17b3812d723a5d",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Estadísticas generales",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estadisticas",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nLibros, capítulos, personajes, simulaciones, recursos, pacientes y avance total.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});"
+    },
+    {
+      "_id": "req_97ac3a84de90d0c53acbac647ca3fe82",
+      "_type": "request",
+      "parentId": "fld_50dd66ac05be8e9cbb17b3812d723a5d",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Avance de pacientes",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estadisticas/pacientes",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nAvance de cada paciente. Solo muestra el alias, no el correo, para cuidar la privacidad.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('Contenido de la respuesta', () => {\n  insomnia.expect(insomnia.response.json().data[0]).to.not.have.property('email');\n});"
+    },
+    {
+      "_id": "req_7c567cf17f4c9827fa65b3d597392fbd",
+      "_type": "request",
+      "parentId": "fld_50dd66ac05be8e9cbb17b3812d723a5d",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Estadísticas como paciente",
+      "method": "GET",
+      "url": "{{ _.base_url }}/estadisticas",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 403 Forbidden**\n\nUn paciente no puede ver las estadísticas.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 403 Forbidden', () => {\n  insomnia.expect(insomnia.response.code).to.equal(403);\n});"
+    },
+    {
+      "_id": "fld_f4a90f68fb6603609f5be183ccdb5fce",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "10. Errores generales",
+      "description": "Respuestas de la API ante rutas y datos mal formados.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1100
+    },
+    {
+      "_id": "req_5738de0425b3e9c4749b797e3dc482c0",
+      "_type": "request",
+      "parentId": "fld_f4a90f68fb6603609f5be183ccdb5fce",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Ruta inexistente",
+      "method": "GET",
+      "url": "{{ _.base_url }}/no-existe",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 404 Not Found**\n\nCualquier ruta que no existe responde 404 en formato JSON.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 404 Not Found', () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});"
+    },
+    {
+      "_id": "req_5860111cf68daca9a011b37ce84c538b",
+      "_type": "request",
+      "parentId": "fld_f4a90f68fb6603609f5be183ccdb5fce",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Cuerpo JSON mal formado",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"email\": "
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nEl cuerpo no es un JSON válido.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_83d0d24be8dfc9b71bbb49d45fed87d9",
+      "_type": "request",
+      "parentId": "fld_f4a90f68fb6603609f5be183ccdb5fce",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Id con intento de inyección SQL",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros/1%20OR%201%3D1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nEl id debe ser un número: se rechaza antes de llegar a la base de datos. Además, todas las consultas usan parámetros ($1).\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    }
+  ]
+}

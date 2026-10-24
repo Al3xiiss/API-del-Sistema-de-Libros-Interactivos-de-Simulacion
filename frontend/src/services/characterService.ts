@@ -1,33 +1,31 @@
-/** Gestión de personajes (RF-07). Solo Administrador. */
-import { CHARACTERS } from '../data/mockData';
+/** Gestión de personajes (RF-07). Ver: cualquier usuario con sesión. Crear, editar y eliminar: Administrador. */
 import { Character } from '../types';
-import { createId, delay, readJSON, writeJSON } from './storage';
-
-const CHARACTERS_KEY = 'li.characters';
-
-const readCharacters = () => readJSON<Character[]>(CHARACTERS_KEY, CHARACTERS);
+import { apiDelete, apiGet, apiPost, apiPut, orUndefined, path } from './api';
+import { PersonajeApi, toCharacter } from './mappers';
 
 export async function getCharacters(): Promise<Character[]> {
-  await delay();
-  return readCharacters();
+  const personajes = await apiGet<PersonajeApi[]>('/personajes');
+  return personajes.map(toCharacter);
 }
 
 export async function getCharacter(id: string): Promise<Character | undefined> {
-  await delay(200);
-  return readCharacters().find((c) => c.id === id);
+  if (!id) return undefined; // simulación sin personaje asignado
+  const personaje = await orUndefined(apiGet<PersonajeApi>(path('/personajes', id)));
+  return personaje && toCharacter(personaje);
 }
 
 export async function saveCharacter(input: Omit<Character, 'id'> & { id?: string }): Promise<void> {
-  await delay();
-  const list = readCharacters();
+  const body = {
+    capitulo_id: Number(input.chapterId),
+    nombre: input.name,
+    descripcion: input.description,
+    atributos: input.attributes,
+  };
   if (input.id) {
-    writeJSON(CHARACTERS_KEY, list.map((c) => (c.id === input.id ? ({ ...c, ...input } as Character) : c)));
+    await apiPut(path('/personajes', input.id), body);
   } else {
-    writeJSON(CHARACTERS_KEY, [...list, { ...input, id: createId('p') }]);
+    await apiPost('/personajes', body);
   }
 }
 
-export async function deleteCharacter(id: string): Promise<void> {
-  await delay();
-  writeJSON(CHARACTERS_KEY, readCharacters().filter((c) => c.id !== id));
-}
+export const deleteCharacter = (id: string) => apiDelete(path('/personajes', id));

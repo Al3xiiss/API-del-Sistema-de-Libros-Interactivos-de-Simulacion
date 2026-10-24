@@ -9,7 +9,6 @@ import { useParams } from 'react-router-dom';
 import ChapterListItem from '../../components/ChapterListItem';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
-import { useAuth } from '../../context/AuthContext';
 import { getBook, getChapters } from '../../services/bookService';
 import { bookPercent, chapterStatus, getProgress } from '../../services/progressService';
 import { Book, BookProgress, Chapter, ChapterStatus } from '../../types';
@@ -17,7 +16,6 @@ import { usePageEnter } from '../../hooks/usePageEnter';
 
 const BookDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const router = useIonRouter();
   const [presentToast] = useIonToast();
   const [book, setBook] = useState<Book | null | undefined>(undefined); // undefined = cargando
@@ -25,7 +23,7 @@ const BookDetailPage: React.FC = () => {
   const [progress, setProgress] = useState<BookProgress>();
 
   usePageEnter(() => {
-    Promise.all([getBook(id!), getChapters(id!), getProgress(user!.id)]).then(([b, c, store]) => {
+    Promise.all([getBook(id!), getChapters(id!), getProgress()]).then(([b, c, store]) => {
       setBook(b ?? null);
       setChapters(c);
       setProgress(store[id!]);

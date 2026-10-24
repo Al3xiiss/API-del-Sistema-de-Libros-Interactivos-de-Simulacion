@@ -6,9 +6,7 @@ import { addOutline, bookOutline, peopleOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
-import { countPatients } from '../../services/authService';
-import { getAllChapters, getBooks } from '../../services/bookService';
-import { getCharacters } from '../../services/characterService';
+import { getAdminStats } from '../../services/statsService';
 import { usePageEnter } from '../../hooks/usePageEnter';
 
 const AdminHomePage: React.FC = () => {
@@ -16,15 +14,8 @@ const AdminHomePage: React.FC = () => {
   const [stats, setStats] = useState({ books: 0, chapters: 0, characters: 0, patients: 0 });
 
   usePageEnter(() => {
-    Promise.all([getBooks(), getAllChapters(), getCharacters()]).then(([books, chapters, characters]) => {
-      const bookIds = books.map((b) => b.id);
-      setStats({
-        books: books.length,
-        chapters: chapters.filter((c) => bookIds.includes(c.bookId)).length,
-        characters: characters.length,
-        patients: countPatients(),
-      });
-    });
+    // Los totales los calcula la API (GET /api/estadisticas)
+    getAdminStats().then(setStats);
   });
 
   const cards = [

@@ -41,10 +41,16 @@ const AdminBookFormPage: React.FC = () => {
     setTouched(true);
     if (errors.title || errors.synopsis) return;
     setSaving(true);
-    await saveBook({ id, title: title.trim(), synopsis: synopsis.trim() });
-    setSaving(false);
-    presentToast({ message: id ? 'Libro actualizado.' : 'Libro creado.', duration: 2000, color: 'success', position: 'top' });
-    router.push('/admin/books', 'back');
+    try {
+      await saveBook({ id, title: title.trim(), synopsis: synopsis.trim() });
+      presentToast({ message: id ? 'Libro actualizado.' : 'Libro creado.', duration: 2000, color: 'success', position: 'top' });
+      router.push('/admin/books', 'back');
+    } catch (err) {
+      // Mensaje que devuelve la API, ej. "El título debe tener entre 3 y 80 caracteres"
+      presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -76,7 +82,7 @@ const AdminBookFormPage: React.FC = () => {
             errorText={errors.synopsis}
             onIonInput={(e) => setSynopsis(e.detail.value ?? '')}
           />
-          <p className="small-note">* Campo obligatorio. Los capítulos se agregan desde la gestión de capítulos (EP2).</p>
+          <p className="small-note">* Campo obligatorio.</p>
           <IonButton type="submit" expand="block" disabled={saving}>
             {saving ? <IonSpinner name="dots" aria-label="Guardando" /> : 'Guardar'}
           </IonButton>

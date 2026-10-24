@@ -41,9 +41,13 @@ const AdminCharactersPage: React.FC = () => {
           text: 'Eliminar',
           role: 'destructive',
           handler: async () => {
-            await deleteCharacter(character.id);
-            presentToast({ message: 'Personaje eliminado.', duration: 2000, position: 'top' });
-            load();
+            try {
+              await deleteCharacter(character.id);
+              presentToast({ message: 'Personaje eliminado.', duration: 2000, position: 'top' });
+              load();
+            } catch (err) {
+              presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+            }
           },
         },
       ],

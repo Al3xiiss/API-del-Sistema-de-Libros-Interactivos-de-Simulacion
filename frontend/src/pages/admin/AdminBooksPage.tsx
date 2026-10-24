@@ -8,7 +8,7 @@ import { useState } from 'react';
 import AdminItemCard from '../../components/AdminItemCard';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
-import { chaptersOf, deleteBook, getBooks } from '../../services/bookService';
+import { deleteBook, getBooks } from '../../services/bookService';
 import { Book } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
 
@@ -24,16 +24,20 @@ const AdminBooksPage: React.FC = () => {
   const confirmDelete = (book: Book) =>
     presentAlert({
       header: 'Eliminar libro',
-      message: `¿Seguro que quieres eliminar "${book.title}"? Esta acción no se puede deshacer.`,
+      message: `¿Seguro que quieres eliminar "${book.title}"? También se eliminarán sus capítulos, personajes y simulaciones. Esta acción no se puede deshacer.`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Eliminar',
           role: 'destructive',
           handler: async () => {
-            await deleteBook(book.id);
-            presentToast({ message: 'Libro eliminado.', duration: 2000, position: 'top' });
-            load();
+            try {
+              await deleteBook(book.id);
+              presentToast({ message: 'Libro eliminado.', duration: 2000, position: 'top' });
+              load();
+            } catch (err) {
+              presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+            }
           },
         },
       ],
@@ -54,7 +58,7 @@ const AdminBooksPage: React.FC = () => {
                 <IonCol size="12" sizeMd="6" key={book.id}>
                   <AdminItemCard
                     title={book.title}
-                    subtitle={`${chaptersOf(book.id).length} capítulos`}
+                    subtitle={`${book.chapterCount ?? 0} capítulos`}
                     detail={book.synopsis}
                     editHref={`/admin/books/${book.id}/edit`}
                     onDelete={() => confirmDelete(book)}

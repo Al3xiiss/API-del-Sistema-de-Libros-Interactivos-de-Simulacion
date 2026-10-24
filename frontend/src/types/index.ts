@@ -1,6 +1,6 @@
 /**
- * Tipos del dominio. Reflejan el modelo que tendrá la API REST en la EP2,
- * así el cambio de datos simulados a datos reales no toca las pantallas.
+ * Tipos del dominio que usan las pantallas.
+ * Los datos de la API (en español) se traducen a estos tipos en services/mappers.ts.
  */
 
 export type Role = 'patient' | 'admin';
@@ -17,8 +17,10 @@ export interface Book {
   id: string;
   title: string;
   synopsis: string;
-  /** Color de la portada provisoria (en la EP2 será una imagen). */
+  /** Color de la portada provisoria. */
   coverColor: string;
+  /** Cantidad de capítulos (la calcula la API). */
+  chapterCount?: number;
 }
 
 export interface Chapter {
@@ -29,6 +31,8 @@ export interface Chapter {
   paragraphs: string[];
   /** Si el capítulo termina en una simulación, su id. */
   simulationId?: string;
+  /** Cantidad de recursos multimedia del capítulo. */
+  resourceCount?: number;
 }
 
 export interface DecisionOption {
@@ -62,6 +66,8 @@ export interface Resource {
   type: 'video' | 'audio';
   title: string;
   description: string;
+  /** Archivo del recurso; si no tiene, se muestra el reproductor de vista previa. */
+  url?: string;
   durationSeconds: number;
 }
 

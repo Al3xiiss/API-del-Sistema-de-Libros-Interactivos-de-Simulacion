@@ -8,15 +8,13 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
-import { useAuth } from '../../context/AuthContext';
-import { chaptersOf, getChapter, hasResources } from '../../services/bookService';
+import { getChapter, getChapters } from '../../services/bookService';
 import { chapterStatus, completeChapter, getProgress, markChapterOpened } from '../../services/progressService';
 import { Chapter } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
 
 const ChapterPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const router = useIonRouter();
   const [presentToast] = useIonToast();
   const [chapter, setChapter] = useState<Chapter | null | undefined>(undefined);
@@ -24,21 +22,29 @@ const ChapterPage: React.FC = () => {
   const [locked, setLocked] = useState(false);
 
   usePageEnter(() => {
-    Promise.all([getChapter(id!), getProgress(user!.id)]).then(([found, store]) => {
+    Promise.all([getChapter(id!), getProgress()]).then(async ([found, store]) => {
       if (!found) return setChapter(null);
-      const bookChapters = chaptersOf(found.bookId);
-      const status = chapterStatus(bookChapters, bookChapters.indexOf(found), store[found.bookId]);
+      const bookChapters = await getChapters(found.bookId);
+      const index = bookChapters.findIndex((c) => c.id === found.id);
+      const status = chapterStatus(bookChapters, index, store[found.bookId]);
       setSiblings(bookChapters);
       setLocked(status === 'locked');
       setChapter(found);
       // Guarda el último capítulo abierto para "Continúa donde lo dejaste".
-      if (status !== 'locked') markChapterOpened(user!.id, found.bookId, found.id);
+      // Si falla, solo se pierde el "Continúa donde lo dejaste"; la lectura sigue.
+      if (status !== 'locked') markChapterOpened(found.id).catch(() => undefined);
     });
   });
 
-  const finishChapter = () => {
+  const finishChapter = async () => {
     if (!chapter) return;
-    completeChapter(user!.id, chapter.bookId, chapter.id);
+    // Se espera a que la API guarde el avance: así el siguiente capítulo ya aparece desbloqueado.
+    try {
+      await completeChapter(chapter.id);
+    } catch (err) {
+      presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+      return;
+    }
     const next = siblings.find((c) => c.number === chapter.number + 1);
     if (next) {
       router.push(`/app/chapters/${next.id}`);
@@ -80,7 +86,7 @@ const ChapterPage: React.FC = () => {
                 <IonIcon aria-hidden="true" icon={imageOutline} />
               </div>
 
-              {hasResources(chapter.id) && (
+              {(chapter.resourceCount ?? 0) > 0 && (
                 <IonButton fill="outline" expand="block" routerLink={`/app/chapters/${chapter.id}/resources`}>
                   <IonIcon aria-hidden="true" slot="start" icon={playCircleOutline} />
                   Ver recursos del capítulo

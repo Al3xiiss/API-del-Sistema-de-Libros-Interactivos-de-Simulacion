@@ -9,7 +9,7 @@ import BookCard from '../../components/BookCard';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
-import { chaptersOf, getBooks } from '../../services/bookService';
+import { getAllChapters, getBooks } from '../../services/bookService';
 import { bookPercent, getProgress } from '../../services/progressService';
 import { Book, Chapter, ProgressStore } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
@@ -28,10 +28,10 @@ const HomePage: React.FC = () => {
 
   // Se recarga cada vez que la vista entra, para reflejar el avance reciente.
   usePageEnter(() => {
-    Promise.all([getBooks(), getProgress(user!.id)]).then(([books, store]) => {
+    Promise.all([getBooks(), getAllChapters(), getProgress()]).then(([books, allChapters, store]) => {
       setProgress(store);
       setLibrary(books.map((book) => {
-        const chapters = chaptersOf(book.id);
+        const chapters = allChapters.filter((c) => c.bookId === book.id);
         return { book, chapters, percent: bookPercent(chapters.length, store[book.id]) };
       }));
     });

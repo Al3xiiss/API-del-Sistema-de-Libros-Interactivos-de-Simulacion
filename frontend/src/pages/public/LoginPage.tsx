@@ -101,7 +101,7 @@ const LoginPage: React.FC = () => {
             <p className="small-note">* Campo obligatorio</p>
 
             <IonNote className="demo-note">
-              Cuentas de prueba (EP1):<br />
+              Cuentas de prueba:<br />
               Paciente: paciente@demo.cl / Paciente123<br />
               Administrador: admin@demo.cl / Admin12345
             </IonNote>

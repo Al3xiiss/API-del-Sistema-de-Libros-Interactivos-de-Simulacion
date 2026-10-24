@@ -4,7 +4,7 @@
  */
 import {
   IonButton, IonCard, IonCardContent, IonCol, IonContent, IonFooter, IonGrid, IonPage, IonRow,
-  IonSkeletonText, IonToolbar, useIonRouter,
+  IonSkeletonText, IonToolbar, useIonRouter, useIonToast,
 } from '@ionic/react';
 import { alertCircleOutline } from 'ionicons/icons';
 import { useState } from 'react';
@@ -12,8 +12,7 @@ import { useParams } from 'react-router-dom';
 import DecisionOptionCard from '../../components/DecisionOptionCard';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
-import { useAuth } from '../../context/AuthContext';
-import { chaptersOf, getChapter, getSimulation, simulationsOfBook } from '../../services/bookService';
+import { getChapter, getChapters, getSimulation, getSimulations } from '../../services/bookService';
 import { getCharacter } from '../../services/characterService';
 import { completeChapter, getProgress, saveDecision } from '../../services/progressService';
 import { Chapter, Character, Simulation } from '../../types';
@@ -23,14 +22,15 @@ const LETTERS = ['A', 'B', 'C', 'D'];
 
 const DecisionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const router = useIonRouter();
+  const [presentToast] = useIonToast();
   const [simulation, setSimulation] = useState<Simulation | null | undefined>(undefined);
   const [chapter, setChapter] = useState<Chapter>();
   const [nextChapter, setNextChapter] = useState<Chapter>();
   const [character, setCharacter] = useState<Character>();
   const [selected, setSelected] = useState<string>();
   const [confirmed, setConfirmed] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [counter, setCounter] = useState({ current: 0, total: 0 });
 
   usePageEnter(() => {
@@ -39,13 +39,13 @@ const DecisionPage: React.FC = () => {
     getSimulation(id!).then(async (sim) => {
       if (!sim) return setSimulation(null);
       const [current, person, store] = await Promise.all([
-        getChapter(sim.chapterId), getCharacter(sim.characterId), getProgress(user!.id),
+        getChapter(sim.chapterId), getCharacter(sim.characterId), getProgress(),
       ]);
-      const bookId = current?.bookId ?? '';
-      const chapters = chaptersOf(bookId);
-      const bookSims = simulationsOfBook(bookId);
+      if (!current) return setSimulation(null);
+      const bookId = current.bookId;
+      const [chapters, bookSims] = await Promise.all([getChapters(bookId), getSimulations(bookId)]);
       setChapter(current);
-      setNextChapter(chapters.find((c) => c.number === (current?.number ?? 0) + 1));
+      setNextChapter(chapters.find((c) => c.number === current.number + 1));
       setCharacter(person);
       setCounter({ current: bookSims.findIndex((s) => s.id === sim.id) + 1, total: bookSims.length });
       // Si ya decidió antes, se muestra su elección anterior.
@@ -58,11 +58,18 @@ const DecisionPage: React.FC = () => {
     });
   });
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!simulation || !chapter || !selected) return;
-    saveDecision(user!.id, chapter.bookId, simulation.id, selected);
-    completeChapter(user!.id, chapter.bookId, chapter.id);
-    setConfirmed(true);
+    setSaving(true);
+    try {
+      await saveDecision(simulation.id, selected);
+      await completeChapter(chapter.id);
+      setConfirmed(true);
+    } catch (err) {
+      presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const outcome = simulation?.options.find((o) => o.id === selected)?.outcome;
@@ -117,8 +124,8 @@ const DecisionPage: React.FC = () => {
         <IonFooter>
           <IonToolbar className="footer-actions">
             {!confirmed ? (
-              <IonButton expand="block" disabled={!selected} onClick={confirm}>
-                Confirmar decisión
+              <IonButton expand="block" disabled={!selected || saving} onClick={confirm}>
+                {saving ? 'Guardando…' : 'Confirmar decisión'}
               </IonButton>
             ) : nextChapter ? (
               <IonButton expand="block" onClick={() => router.push(`/app/chapters/${nextChapter.id}`)}>

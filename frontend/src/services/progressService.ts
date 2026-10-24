@@ -1,43 +1,29 @@
 /**
- * Progreso del paciente (RF-04 y RF-06). Cada usuario tiene su propio registro,
- * así un paciente solo ve sus métricas.
+ * Progreso del paciente (RF-04 y RF-06).
+ * La API identifica al paciente por su token, así cada uno solo ve y modifica su propio avance.
  */
-import { DEMO_PROGRESS } from '../data/mockData';
 import { BookProgress, Chapter, ChapterStatus, ProgressStore } from '../types';
-import { delay, readJSON, writeJSON } from './storage';
+import { apiGet, apiPut, path } from './api';
+import { ProgresoLibroApi, toProgressStore } from './mappers';
 
-const keyFor = (userId: string) => `li.progress.${userId}`;
-
-const read = (userId: string): ProgressStore =>
-  readJSON<ProgressStore>(keyFor(userId), userId === 'u-paciente' ? DEMO_PROGRESS : {});
-
-const emptyProgress = (): BookProgress => ({ completedChapterIds: [], decisions: {}, updatedAt: '' });
-
-/** Aplica un cambio al progreso de un libro y lo guarda. */
-function update(userId: string, bookId: string, change: (p: BookProgress) => BookProgress) {
-  const store = read(userId);
-  const next = change(store[bookId] ?? emptyProgress());
-  writeJSON(keyFor(userId), { ...store, [bookId]: { ...next, updatedAt: new Date().toISOString() } });
+export async function getProgress(): Promise<ProgressStore> {
+  const { libros } = await apiGet<{ libros: ProgresoLibroApi[] }>('/progreso');
+  return toProgressStore(libros);
 }
 
-export async function getProgress(userId: string): Promise<ProgressStore> {
-  await delay(200);
-  return read(userId);
+/** Registra que el paciente abrió el capítulo (para "Continúa donde lo dejaste"). */
+export async function markChapterOpened(chapterId: string): Promise<void> {
+  await apiPut(path('/progreso/capitulos', chapterId), {});
 }
 
-export const markChapterOpened = (userId: string, bookId: string, chapterId: string) =>
-  update(userId, bookId, (p) => ({ ...p, lastChapterId: chapterId }));
+export async function completeChapter(chapterId: string): Promise<void> {
+  await apiPut(path('/progreso/capitulos', chapterId), { completado: true });
+}
 
-export const completeChapter = (userId: string, bookId: string, chapterId: string) =>
-  update(userId, bookId, (p) => ({
-    ...p,
-    completedChapterIds: p.completedChapterIds.includes(chapterId)
-      ? p.completedChapterIds
-      : [...p.completedChapterIds, chapterId],
-  }));
-
-export const saveDecision = (userId: string, bookId: string, simulationId: string, optionId: string) =>
-  update(userId, bookId, (p) => ({ ...p, decisions: { ...p.decisions, [simulationId]: optionId } }));
+/** Guarda la opción elegida; si ya había decidido en esa simulación, la reemplaza. */
+export async function saveDecision(simulationId: string, optionId: string): Promise<void> {
+  await apiPut(path('/decisiones', simulationId), { opcion_id: Number(optionId) });
+}
 
 /**
  * Un capítulo está disponible si es el primero o si el anterior está completado.

@@ -7,8 +7,7 @@ import { statsChartOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
-import { useAuth } from '../../context/AuthContext';
-import { chaptersOf, getBooks } from '../../services/bookService';
+import { getAllChapters, getBooks } from '../../services/bookService';
 import { bookPercent, getProgress } from '../../services/progressService';
 import { Book, BookProgress, Chapter } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
@@ -20,15 +19,18 @@ interface Row {
 }
 
 const ProgressPage: React.FC = () => {
-  const { user } = useAuth();
   const [rows, setRows] = useState<Row[] | null>(null);
 
   usePageEnter(() => {
-    Promise.all([getBooks(), getProgress(user!.id)]).then(([books, store]) => {
+    Promise.all([getBooks(), getAllChapters(), getProgress()]).then(([books, allChapters, store]) => {
       setRows(
         books
           .filter((book) => store[book.id])
-          .map((book) => ({ book, chapters: chaptersOf(book.id), progress: store[book.id] })),
+          .map((book) => ({
+            book,
+            chapters: allChapters.filter((c) => c.bookId === book.id),
+            progress: store[book.id],
+          })),
       );
     });
   });

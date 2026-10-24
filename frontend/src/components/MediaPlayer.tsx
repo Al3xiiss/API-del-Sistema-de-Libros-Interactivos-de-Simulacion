@@ -1,7 +1,7 @@
 /**
- * Reproductor multimedia simulado (RF-05). Imita los controles del Figma
- * (play/pausa, barra y tiempo). En la EP2 se reemplaza por <video>/<audio>
- * con la URL que entregue la API.
+ * Reproductor multimedia (RF-05).
+ * Si el recurso tiene archivo (url que entrega la API) usa el <video>/<audio> del navegador.
+ * Si no, muestra una vista previa que imita los controles del Figma (play/pausa, barra y tiempo).
  */
 import { IonButton, IonIcon, IonProgressBar } from '@ionic/react';
 import { headsetOutline, pause, play, videocamOutline } from 'ionicons/icons';
@@ -36,6 +36,18 @@ const MediaPlayer: React.FC<{ resource: Resource }> = ({ resource }) => {
     return () => clearInterval(timer);
   }, [playing, resource.durationSeconds]);
 
+  if (resource.url) {
+    return (
+      <div className="media-player">
+        {resource.type === 'video' ? (
+          <video src={resource.url} controls preload="metadata" style={{ width: '100%', display: 'block' }} />
+        ) : (
+          <audio src={resource.url} controls preload="metadata" style={{ width: '100%', display: 'block' }} />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="media-player">
       <div className="media-screen" aria-hidden="true">
@@ -50,7 +62,7 @@ const MediaPlayer: React.FC<{ resource: Resource }> = ({ resource }) => {
         >
           <IonIcon slot="icon-only" icon={playing ? pause : play} />
         </IonButton>
-        <IonProgressBar value={elapsed / resource.durationSeconds} aria-hidden="true" />
+        <IonProgressBar value={resource.durationSeconds > 0 ? elapsed / resource.durationSeconds : 0} aria-hidden="true" />
         <span className="media-time">
           {formatTime(elapsed)} / {formatTime(resource.durationSeconds)}
         </span>

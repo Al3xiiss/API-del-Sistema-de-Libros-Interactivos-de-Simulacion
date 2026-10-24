@@ -49,10 +49,15 @@ const AdminCharacterFormPage: React.FC = () => {
     setTouched(true);
     if (errors.name || errors.chapterId) return;
     setSaving(true);
-    await saveCharacter({ ...form, id });
-    setSaving(false);
-    presentToast({ message: id ? 'Personaje actualizado.' : 'Personaje creado.', duration: 2000, color: 'success', position: 'top' });
-    router.push('/admin/characters', 'back');
+    try {
+      await saveCharacter({ ...form, id });
+      presentToast({ message: id ? 'Personaje actualizado.' : 'Personaje creado.', duration: 2000, color: 'success', position: 'top' });
+      router.push('/admin/characters', 'back');
+    } catch (err) {
+      presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const bookTitle = (bookId: string) => books.find((b) => b.id === bookId)?.title ?? '';

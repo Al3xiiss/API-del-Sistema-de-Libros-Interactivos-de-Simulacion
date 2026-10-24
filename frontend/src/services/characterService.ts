@@ -1,4 +1,4 @@
-/** Gestión de personajes (RF-07). Ver: cualquier usuario con sesión. Crear, editar y eliminar: Administrador. */
+/** Gestión de personajes (RF-10, RF-11 y RF-12). Ver: cualquier usuario con sesión. Crear, editar y eliminar: Administrador. */
 import { Character } from '../types';
 import { apiDelete, apiGet, apiPost, apiPut, orUndefined, path } from './api';
 import { PersonajeApi, toCharacter } from './mappers';

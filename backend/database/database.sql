@@ -1,11 +1,15 @@
 -- Sistema de Libros Interactivos de Simulación — Base de datos
 -- Motor: PostgreSQL
 
-CREATE DATABASE libros_interactivos;
+-- Paso 1 (una sola vez): crear la base de datos.
+--   En pgAdmin: clic derecho en Databases → Create → Database... → libros_interactivos
+--   o ejecutar esta línea conectado a la base "postgres":
+-- CREATE DATABASE libros_interactivos;
 
--- Tablas (ejecutar conectado a la BD: libros_interactivos)
+-- Paso 2: ejecutar TODO este archivo conectado a la BD libros_interactivos.
+-- Se puede volver a ejecutar cuando se quiera: borra las tablas y carga los datos de prueba de nuevo.
 
-DROP TABLE IF EXISTS decisiones, progreso_capitulos, recursos, opciones,
+DROP TABLE IF EXISTS decisiones, progreso_capitulos, recursos, opciones_simulacion,
   simulaciones, personajes, capitulos, libros, usuarios CASCADE;
 
 -- 1. usuarios

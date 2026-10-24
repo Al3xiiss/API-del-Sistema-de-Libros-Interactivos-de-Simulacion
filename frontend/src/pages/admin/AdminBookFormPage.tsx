@@ -1,4 +1,4 @@
-/** Crear (/admin/books/create) o editar (/admin/books/:id/edit) un libro (RF-01). */
+/** Crear (/admin/books/create) o editar (/admin/books/:id/edit) un libro (RF-01 y RF-02). */
 import {
   IonButton, IonContent, IonInput, IonPage, IonSpinner, IonTextarea, useIonRouter, useIonToast,
 } from '@ionic/react';

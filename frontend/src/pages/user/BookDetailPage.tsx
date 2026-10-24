@@ -1,4 +1,4 @@
-/** Detalle del libro y lista de capítulos (RF-02). Figma: "Capítulos - Móvil". */
+/** Detalle del libro y lista de capítulos (RF-04). Figma: "Capítulos - Móvil". */
 import {
   IonCol, IonContent, IonGrid, IonList, IonPage, IonProgressBar, IonRow, IonSkeletonText,
   useIonRouter, useIonToast,

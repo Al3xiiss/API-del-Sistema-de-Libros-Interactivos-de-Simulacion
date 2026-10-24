@@ -1,4 +1,4 @@
-/** Inicio de la simulación (RF-03). Figma: "Simulación - Móvil". */
+/** Inicio de la simulación (RF-05). Figma: "Simulación - Móvil". */
 import {
   IonAvatar, IonButton, IonCard, IonCardContent, IonContent, IonPage, IonSkeletonText,
 } from '@ionic/react';

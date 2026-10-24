@@ -1,4 +1,4 @@
-/** Gestión de libros (RF-01). Figma: "Gestión de libros - Móvil". */
+/** Gestión de libros (RF-01 a RF-03). Figma: "Gestión de libros - Móvil". */
 import {
   IonButton, IonCol, IonContent, IonFooter, IonGrid, IonIcon, IonPage, IonRow, IonSkeletonText, IonToolbar,
   useIonAlert, useIonToast,

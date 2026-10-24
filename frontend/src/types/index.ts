@@ -71,11 +71,11 @@ export interface Resource {
   durationSeconds: number;
 }
 
-/** Progreso de un paciente en un libro (RF-06). */
+/** Progreso de un paciente en un libro (RF-08). */
 export interface BookProgress {
   completedChapterIds: string[];
   lastChapterId?: string;
-  /** simulationId -> optionId elegida (RF-04). */
+  /** simulationId -> optionId elegida (RF-06). */
   decisions: Record<string, string>;
   updatedAt: string;
 }

@@ -1,4 +1,4 @@
-/** Crear o editar un personaje y asociarlo a un capítulo (RF-07). */
+/** Crear o editar un personaje y asociarlo a un capítulo (RF-10 y RF-11). */
 import {
   IonButton, IonContent, IonInput, IonPage, IonSelect, IonSelectOption, IonSpinner, IonText, IonTextarea,
   useIonRouter, useIonToast,

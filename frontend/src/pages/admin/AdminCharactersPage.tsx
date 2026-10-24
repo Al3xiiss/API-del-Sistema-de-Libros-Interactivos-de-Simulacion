@@ -1,4 +1,4 @@
-/** Gestión de personajes (RF-07). Figma: "Gestión de personajes - Móvil". */
+/** Gestión de personajes (RF-10 a RF-12). Figma: "Gestión de personajes - Móvil". */
 import {
   IonButton, IonCol, IonContent, IonFooter, IonGrid, IonIcon, IonPage, IonRow, IonSkeletonText, IonToolbar,
   useIonAlert, useIonToast,

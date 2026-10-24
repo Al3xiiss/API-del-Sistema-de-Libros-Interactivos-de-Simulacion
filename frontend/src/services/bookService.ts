@@ -1,5 +1,5 @@
 /**
- * Libros, capítulos, simulaciones y recursos (RF-01, RF-02, RF-03, RF-05).
+ * Libros, capítulos, simulaciones y recursos (RF-01 a RF-05 y RF-07).
  * EP2: cada función llama a la API REST y devuelve los mismos tipos que usaban las pantallas en la EP1.
  */
 import { Book, Chapter, Resource, Simulation } from '../types';

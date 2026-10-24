@@ -1,5 +1,5 @@
 /**
- * Reproductor multimedia (RF-05).
+ * Reproductor multimedia (RF-07).
  * Si el recurso tiene archivo (url que entrega la API) usa el <video>/<audio> del navegador.
  * Si no, muestra una vista previa que imita los controles del Figma (play/pausa, barra y tiempo).
  */

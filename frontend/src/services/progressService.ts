@@ -1,5 +1,5 @@
 /**
- * Progreso del paciente (RF-04 y RF-06).
+ * Progreso del paciente (RF-06 y RF-08).
  * La API identifica al paciente por su token, así cada uno solo ve y modifica su propio avance.
  */
 import { BookProgress, Chapter, ChapterStatus, ProgressStore } from '../types';

@@ -1,4 +1,4 @@
-/** Inicio del paciente y biblioteca (RF-02). Figma: "Mis Libros - Móvil". */
+/** Inicio del paciente y biblioteca (RF-04). Figma: "Mis Libros - Móvil". */
 import {
   IonButton, IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonPage, IonProgressBar,
   IonRow, IonSearchbar, IonSkeletonText,

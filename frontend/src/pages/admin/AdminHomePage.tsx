@@ -1,4 +1,4 @@
-/** Panel de administración (/admin). Resumen y accesos a la gestión de contenido. */
+/** Panel de administración (/admin): resumen de la plataforma (RF-09) y accesos a la gestión de contenido. */
 import {
   IonButton, IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonIcon, IonPage, IonRow,
 } from '@ionic/react';

@@ -1,4 +1,4 @@
-/** Consulta de progreso propio (RF-06). Figma: "Mi progreso - Móvil". */
+/** Consulta de progreso propio (RF-08). Figma: "Mi progreso - Móvil". */
 import {
   IonButton, IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonPage, IonProgressBar, IonRow,
   IonSkeletonText,

@@ -14,7 +14,7 @@ interface ChapterListItemProps {
   onSelect: (chapter: Chapter, status: ChapterStatus) => void;
 }
 
-/** Fila de la lista de capítulos con su estado (RF-02). */
+/** Fila de la lista de capítulos con su estado (RF-04). */
 const ChapterListItem: React.FC<ChapterListItemProps> = ({ chapter, status, onSelect }) => {
   const { icon, color, text } = STATUS[status];
   return (

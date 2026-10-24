@@ -1,5 +1,5 @@
 /**
- * Recursos multimedia (RF-05). Figma: "Multimedia - Móvil".
+ * Recursos multimedia (RF-07). Figma: "Multimedia - Móvil".
  * - /resources: todos los recursos (pestaña "Recursos").
  * - /chapters/:id/resources: solo los del capítulo, con botón para volver a la lectura.
  */

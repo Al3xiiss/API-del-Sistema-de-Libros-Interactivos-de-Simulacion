@@ -1,5 +1,5 @@
 /**
- * Toma de decisiones (RF-04). Figma: "Toma de decisiones - Móvil".
+ * Toma de decisiones (RF-06). Figma: "Toma de decisiones - Móvil".
  * Primero se selecciona una tarjeta y luego se confirma (evita toques accidentales).
  */
 import {

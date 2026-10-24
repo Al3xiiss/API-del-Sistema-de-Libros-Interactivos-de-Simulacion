@@ -1,4 +1,4 @@
-/** Lectura de capítulo (RF-02). Figma: "Lectura del capítulo - Móvil". */
+/** Lectura de capítulo (RF-04). Figma: "Lectura del capítulo - Móvil". */
 import {
   IonButton, IonContent, IonFooter, IonIcon, IonPage, IonProgressBar, IonSkeletonText, IonToolbar,
   useIonRouter, useIonToast,

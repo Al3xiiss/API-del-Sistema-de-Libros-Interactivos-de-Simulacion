@@ -337,8 +337,6 @@ El sistema deberá ejecutarse correctamente en los siguientes navegadores, en la
 
 Estas versiones coinciden con el objetivo de compilación por defecto de Vite 8, que es la herramienta con la que se construye el frontend (*Baseline Widely Available*) [[21]](#referencias). Además, la interfaz deberá adaptarse a pantallas de 360 px de ancho (móvil) hasta 1920 px (escritorio).
 
-Se validará abriendo la aplicación en esos navegadores y con el modo dispositivo de DevTools en 360 × 800 (móvil), 768 × 1024 (tablet) y 1366 × 768 (escritorio).
-
 ---
 ## Arquitectura de Navegación
 ### 1. Rutas principales y secundarias

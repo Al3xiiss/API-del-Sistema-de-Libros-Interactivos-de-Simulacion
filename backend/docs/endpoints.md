@@ -103,7 +103,7 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
 
 ## Endpoints
 
-En las tablas, **Acceso** indica quién puede usar la ruta: *Público* (sin token), *Sesión* (cualquier usuario con token) o *Admin*.
+En las tablas, **Acceso** indica quién puede usar la ruta: Público (sin token), Sesión (cualquier usuario con token) o Admin.
 
 ### Estado del servidor
 
@@ -466,18 +466,18 @@ Igual que el progreso, el usuario se obtiene del token.
 La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **79 peticiones** en 11 carpetas: los casos correctos y los de error (400, 401, 403, 404 y 409) de cada módulo. Cada petición incluye:
 
 - Una descripción, en la pestaña **Docs**, con la respuesta esperada.
-- Pruebas automáticas, en la pestaña **Scripts → After-response**, que revisan el código HTTP y, en algunas, el contenido.
+- Pruebas automáticas.
 - El token correcto, que se obtiene solo desde **Login paciente** o **Login admin**.
 - En las peticiones de editar y eliminar, el id del registro creado en la petición **Crear** de la misma carpeta.
 
 ### Importarla
 
 1. Levanta el backend (`npm run dev` en `backend/`) con la base de datos cargada desde `database/database.sql`.
-2. En Insomnia: **Import** → elige el archivo `insomnia-libros-interactivos.json`.
+2. En Insomnia: **Import** y elige el archivo `insomnia-libros-interactivos.json`.
 3. Revisa que el entorno tenga `base_url` = `http://localhost:3000/api`.
 
 ### Ejecutarla completa
 
-Usa el **Collection Runner**: clic derecho sobre la colección o sobre una carpeta → **Run**. Las peticiones se ejecutan en orden y al final se ve cuántas pruebas pasaron.
+Usa el **Collection Runner**: clic derecho sobre la colección o sobre una carpeta y **Run**. Las peticiones se ejecutan en orden y al final se ve cuántas pruebas pasaron.
 
-La colección deja los datos como estaban: todo lo que crea en una carpeta lo elimina al final de esa misma carpeta. La única excepción es el paciente `paciente_insomnia`, que se registra la primera vez. En las siguientes ejecuciones, esa petición responde `409`, y su prueba acepta las dos respuestas.
+La colección deja los datos como estaban: todo lo que crea en una carpeta lo elimina al final de esa misma carpeta. La única excepción es el paciente `paciente_insomnia`, que se registra la primera vez. En las siguientes ejecuciones esa petición responde `409` y su prueba acepta las dos respuestas.

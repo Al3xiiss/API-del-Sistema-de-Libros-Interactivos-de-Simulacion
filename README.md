@@ -256,8 +256,6 @@ Los perfiles anteriores se construyeron a partir de los siguientes supuestos:
 
 ## Requerimientos Funcionales por Rol
 
-Cada requerimiento describe **una sola funcionalidad** y se redacta con la estructura **producto** (el sistema) + **verbo** (la acción que permite, en negrita) + **necesidad** (para qué la necesita el usuario, después de "para").
-
 | ID | Nombre | Descripción (producto + verbo + necesidad) | Rol | Precondiciones | Flujo Principal | Resultado Esperado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **RF-01** | Crear libro | El sistema deberá permitir al administrador **crear** un libro interactivo con título y sinopsis, para publicar nuevo contenido de apoyo emocional. | Administrador | Estar autenticado como administrador. | 1. Accede a "Gestión de libros".<br>2. Presiona "Nuevo libro".<br>3. Completa título y sinopsis.<br>4. Presiona "Guardar". | El libro aparece en el catálogo y se muestra el mensaje "Libro creado." |
@@ -272,8 +270,6 @@ Cada requerimiento describe **una sola funcionalidad** y se redacta con la estru
 | **RF-10** | Crear personaje | El sistema deberá permitir al administrador **crear** un personaje con nombre, descripción, atributos y capítulo asociado, para que participe en las simulaciones de ese capítulo. | Administrador | Estar autenticado como administrador y que exista al menos un capítulo. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Nuevo personaje".<br>3. Completa los datos y elige el capítulo.<br>4. Presiona "Guardar". | El personaje queda disponible para las simulaciones del capítulo y se muestra el mensaje "Personaje creado." |
 | **RF-11** | Editar personaje | El sistema deberá permitir al administrador **editar** los datos o el capítulo asociado de un personaje existente, para mantener coherente la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Editar" en el personaje.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El personaje se actualiza y se muestra el mensaje "Personaje actualizado." |
 | **RF-12** | Eliminar personaje | El sistema deberá permitir al administrador **eliminar** un personaje, previa confirmación, para retirarlo de la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Eliminar" en el personaje.<br>3. Confirma en el cuadro de diálogo. | El personaje se elimina, las simulaciones donde aparecía muestran un personaje genérico y se muestra el mensaje "Personaje eliminado." |
-
-**Nota (EP2):** la API también ofrece el CRUD de capítulos, simulaciones y recursos (`/api/capitulos`, `/api/simulaciones`, `/api/recursos`). Sus pantallas de administración están planificadas, por lo que todavía no se incluyen como requerimientos de la interfaz.
 
 ---
 
@@ -340,8 +336,6 @@ El sistema deberá ejecutarse correctamente en los siguientes navegadores, en la
 | Safari | 16.4 | macOS e iOS |
 
 Estas versiones coinciden con el objetivo de compilación por defecto de Vite 8, que es la herramienta con la que se construye el frontend (*Baseline Widely Available*) [[21]](#referencias). Además, la interfaz deberá adaptarse a pantallas de 360 px de ancho (móvil) hasta 1920 px (escritorio).
-
-Se validará abriendo la aplicación en esos navegadores y con el modo dispositivo de DevTools en 360 × 800 (móvil), 768 × 1024 (tablet) y 1366 × 768 (escritorio).
 
 ---
 ## Arquitectura de Navegación

@@ -103,7 +103,7 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
 
 ## Endpoints
 
-En las tablas, **Acceso** indica quién puede usar la ruta: *Público* (sin token), *Sesión* (cualquier usuario con token) o *Admin*.
+En las tablas, **Acceso** indica quién puede usar la ruta: Público (sin token), Sesión (cualquier usuario con token) o Admin.
 
 ### Estado del servidor
 

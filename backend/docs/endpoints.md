@@ -466,7 +466,7 @@ Igual que el progreso, el usuario se obtiene del token.
 La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **79 peticiones** en 11 carpetas: los casos correctos y los de error (400, 401, 403, 404 y 409) de cada módulo. Cada petición incluye:
 
 - Una descripción, en la pestaña **Docs**, con la respuesta esperada.
-- Pruebas automáticas, en la pestaña **Scripts → After-response**, que revisan el código HTTP y, en algunas, el contenido.
+- Pruebas automáticas.
 - El token correcto, que se obtiene solo desde **Login paciente** o **Login admin**.
 - En las peticiones de editar y eliminar, el id del registro creado en la petición **Crear** de la misma carpeta.
 

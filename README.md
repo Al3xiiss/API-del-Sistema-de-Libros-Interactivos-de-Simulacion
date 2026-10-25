@@ -256,8 +256,6 @@ Los perfiles anteriores se construyeron a partir de los siguientes supuestos:
 
 ## Requerimientos Funcionales por Rol
 
-Cada requerimiento describe **una sola funcionalidad** y se redacta con la estructura **producto** (el sistema) + **verbo** (la acción que permite, en negrita) + **necesidad** (para qué la necesita el usuario, después de "para").
-
 | ID | Nombre | Descripción (producto + verbo + necesidad) | Rol | Precondiciones | Flujo Principal | Resultado Esperado |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **RF-01** | Crear libro | El sistema deberá permitir al administrador **crear** un libro interactivo con título y sinopsis, para publicar nuevo contenido de apoyo emocional. | Administrador | Estar autenticado como administrador. | 1. Accede a "Gestión de libros".<br>2. Presiona "Nuevo libro".<br>3. Completa título y sinopsis.<br>4. Presiona "Guardar". | El libro aparece en el catálogo y se muestra el mensaje "Libro creado." |

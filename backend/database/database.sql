@@ -155,11 +155,11 @@ INSERT INTO opciones_simulacion (id, simulacion_id, texto, descripcion, consecue
   (10, 5, 'Escribir tres cosas buenas',        'Un pequeño diario de gratitud.',      'Clara descubre que el día tuvo más momentos buenos de los que creía.');
 
 -- Recursos multimedia
-INSERT INTO recursos (id, capitulo_id, tipo, titulo, descripcion, duracion_segundos) VALUES
-  (1, 1, 'video', 'Paseo por los cerros', 'Recorrido visual por las escaleras del cerro Alegre.',            84),
-  (2, 3, 'audio', 'Respiración guiada',   'Ejercicio de respiración de 3 minutos para antes de continuar.', 180),
-  (3, 3, 'video', 'La casa de los faros', 'Ilustraciones animadas del capítulo.',                            95),
-  (4, 9, 'audio', 'Respirar 4-6',         'Audio para practicar la respiración que usa Clara.',             120);
+INSERT INTO recursos (id, capitulo_id, tipo, titulo, descripcion, url, duracion_segundos) VALUES
+  (1, 1, 'video', 'Paseo por los cerros', 'Recorrido visual por el Cerro Concepcion.',            'https://youtu.be/1NSM3mhgwv0',           256),
+  (2, 3, 'audio', 'Respiración guiada',   'Ejercicio de respiración de 3 minutos para antes de continuar.', 'https://youtu.be/fHK6t9daN24',           180),
+  (3, 3, 'video', 'La casa de los faros', 'Ilustraciones animadas del capítulo.',                            'https://youtube.com/shorts/T4r4EzVt028', 32),
+  (4, 9, 'audio', 'Respirar 4-6',         'Audio para practicar la respiración que usa Clara.',             'https://youtu.be/iviujmhIpi0',           328);
 
 -- Progreso del paciente de prueba: completó los capítulos 1 y 2 y dejó abierto el 3
 INSERT INTO progreso_capitulos (usuario_id, capitulo_id, completado, actualizado_en) VALUES

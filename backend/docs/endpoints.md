@@ -473,11 +473,11 @@ La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactiv
 ### Importarla
 
 1. Levanta el backend (`npm run dev` en `backend/`) con la base de datos cargada desde `database/database.sql`.
-2. En Insomnia: **Import** → elige el archivo `insomnia-libros-interactivos.json`.
+2. En Insomnia: **Import** y elige el archivo `insomnia-libros-interactivos.json`.
 3. Revisa que el entorno tenga `base_url` = `http://localhost:3000/api`.
 
 ### Ejecutarla completa
 
-Usa el **Collection Runner**: clic derecho sobre la colección o sobre una carpeta → **Run**. Las peticiones se ejecutan en orden y al final se ve cuántas pruebas pasaron.
+Usa el **Collection Runner**: clic derecho sobre la colección o sobre una carpeta y **Run**. Las peticiones se ejecutan en orden y al final se ve cuántas pruebas pasaron.
 
-La colección deja los datos como estaban: todo lo que crea en una carpeta lo elimina al final de esa misma carpeta. La única excepción es el paciente `paciente_insomnia`, que se registra la primera vez. En las siguientes ejecuciones, esa petición responde `409`, y su prueba acepta las dos respuestas.
+La colección deja los datos como estaban: todo lo que crea en una carpeta lo elimina al final de esa misma carpeta. La única excepción es el paciente `paciente_insomnia`, que se registra la primera vez. En las siguientes ejecuciones esa petición responde `409` y su prueba acepta las dos respuestas.

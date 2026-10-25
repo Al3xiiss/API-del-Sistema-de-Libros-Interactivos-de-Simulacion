@@ -273,8 +273,7 @@ Cada requerimiento describe **una sola funcionalidad** y se redacta con la estru
 | **RF-11** | Editar personaje | El sistema deberá permitir al administrador **editar** los datos o el capítulo asociado de un personaje existente, para mantener coherente la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Editar" en el personaje.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El personaje se actualiza y se muestra el mensaje "Personaje actualizado." |
 | **RF-12** | Eliminar personaje | El sistema deberá permitir al administrador **eliminar** un personaje, previa confirmación, para retirarlo de la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Eliminar" en el personaje.<br>3. Confirma en el cuadro de diálogo. | El personaje se elimina, las simulaciones donde aparecía muestran un personaje genérico y se muestra el mensaje "Personaje eliminado." |
 
-**Nota (EP2):** la API también ofrece el CRUD de capítulos, simulaciones y recursos (`/api/capitulos`, `/api/simulaciones`, `/api/recursos`). Sus pantallas de administración están planificadas, por lo que todavía no se incluyen como requerimientos de la interfaz.
-
+**Nota (EP2):** la API también ofrece el CRUD de capítulos, simulaciones y recursos (`/api/capitulos`, `/api/simulaciones`, `/api/recursos`).
 ---
 
 ### Funcionalidades Transversales

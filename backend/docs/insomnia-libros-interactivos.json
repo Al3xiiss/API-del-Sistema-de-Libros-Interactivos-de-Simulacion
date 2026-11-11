@@ -2783,6 +2783,254 @@
       "settingFollowRedirects": "global",
       "preRequestScript": "",
       "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_4ec781982e5cb28dbe2eabc0d6df68da",
+      "_type": "request",
+      "parentId": "fld_bce4245741add4442769570583bdfc8b",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Completar capítulo bloqueado",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/progreso/capitulos/7",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"completado\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 409 Conflict**\n\nEl libro 2 se acaba de reiniciar, así que el capítulo 6 no está completado. La API no deja completar el capítulo 7 aunque se salte la interfaz: el desbloqueo progresivo también se valida en el backend.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 409 Conflict', () => {\n  insomnia.expect(insomnia.response.code).to.equal(409);\n});"
+    },
+    {
+      "_id": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "11. Límite de intentos de login",
+      "description": "Protección contra fuerza bruta: tras 5 intentos fallidos en 15 minutos para el mismo correo desde la misma IP, la API responde 429. Se usa un correo que no existe (limite@demo.cl) para no bloquear las cuentas de prueba.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1200
+    },
+    {
+      "_id": "req_f7621cc4aaa499604cfc6e22172cb5c7",
+      "_type": "request",
+      "parentId": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Intento fallido 1",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"limite@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized o 429 Too Many Requests**\n\nContraseña incorrecta. Responde 401; si la colección se ejecutó hace menos de 15 minutos, el correo sigue bloqueado y responde 429.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized o 429 Too Many Requests', () => {\n  insomnia.expect([401, 429]).to.include(insomnia.response.code);\n});"
+    },
+    {
+      "_id": "req_d4c1c67aff0fc2f8b4a1194837efa59a",
+      "_type": "request",
+      "parentId": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Intento fallido 2",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"limite@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized o 429 Too Many Requests**\n\nContraseña incorrecta. Responde 401; si la colección se ejecutó hace menos de 15 minutos, el correo sigue bloqueado y responde 429.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized o 429 Too Many Requests', () => {\n  insomnia.expect([401, 429]).to.include(insomnia.response.code);\n});"
+    },
+    {
+      "_id": "req_670d0e1431c397a4d62b8499fb947fd9",
+      "_type": "request",
+      "parentId": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Intento fallido 3",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"limite@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized o 429 Too Many Requests**\n\nContraseña incorrecta. Responde 401; si la colección se ejecutó hace menos de 15 minutos, el correo sigue bloqueado y responde 429.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized o 429 Too Many Requests', () => {\n  insomnia.expect([401, 429]).to.include(insomnia.response.code);\n});"
+    },
+    {
+      "_id": "req_5d354ffac021fe8f2b2fa9aa029a5cbc",
+      "_type": "request",
+      "parentId": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Intento fallido 4",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"limite@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized o 429 Too Many Requests**\n\nContraseña incorrecta. Responde 401; si la colección se ejecutó hace menos de 15 minutos, el correo sigue bloqueado y responde 429.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized o 429 Too Many Requests', () => {\n  insomnia.expect([401, 429]).to.include(insomnia.response.code);\n});"
+    },
+    {
+      "_id": "req_32a71143feef9cdb7ffc719cfd5c59cf",
+      "_type": "request",
+      "parentId": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Intento fallido 5",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"limite@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized o 429 Too Many Requests**\n\nContraseña incorrecta. Responde 401; si la colección se ejecutó hace menos de 15 minutos, el correo sigue bloqueado y responde 429.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized o 429 Too Many Requests', () => {\n  insomnia.expect([401, 429]).to.include(insomnia.response.code);\n});"
+    },
+    {
+      "_id": "req_a9e65e7b134c6ee3de60aae5b08aaf23",
+      "_type": "request",
+      "parentId": "fld_a286ebc21f9caccbcef14c1c1a8824cd",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Intento 6: bloqueado",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"limite@demo.cl\",\n  \"password\": \"mala\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 429 Too Many Requests**\n\nSexto intento fallido en menos de 15 minutos: la API responde 429 y no revisa la contraseña. Otras cuentas pueden seguir iniciando sesión desde la misma IP.\n\nSin token.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 429 Too Many Requests', () => {\n  insomnia.expect(insomnia.response.code).to.equal(429);\n});"
     }
   ]
 }

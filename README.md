@@ -306,7 +306,7 @@ La interfaz deberá mantener un contraste de colores WCAG AA (mínimo 4.5:1) [[8
 
 #### RNF-SEG-01 — Autenticación y almacenamiento de contraseñas
 
-El sistema utiliza JWT para el manejo de sesiones (token firmado con `JWT_SECRET` y válido por 2 horas) y guarda las contraseñas encriptadas con bcrypt (costo 10). Se validó con Insomnia (un token alterado o vencido responde 401) y revisando en la base de datos que `password_hash` nunca contiene la contraseña.
+El sistema utiliza JWT para el manejo de sesiones (token firmado con `JWT_SECRET` de al menos 32 caracteres y válido por 2 horas) y guarda las contraseñas encriptadas con bcrypt (costo 10). El rol se vuelve a leer desde la base de datos en cada petición protegida, y el inicio de sesión se bloquea por 15 minutos después de 5 intentos fallidos. Se validó con Insomnia (un token alterado o vencido responde 401, el sexto intento fallido responde 429) y revisando en la base de datos que `password_hash` nunca contiene la contraseña.
 
 #### RNF-SEG-02 — Privacidad de datos del paciente
 
@@ -699,7 +699,7 @@ El backend está en la carpeta `backend/`. Es una API REST hecha con **Node.js 2
 flowchart LR
     F["Frontend Ionic + React<br/>Axios + interceptores"] -->|"HTTP + JSON<br/>Authorization: Bearer token"| A["Express<br/>helmet, cors, express.json"]
     A --> R["routes/<br/>método y URL"]
-    R --> M["middlewares/<br/>verificarToken, permitirRoles, validar"]
+    R --> M["middlewares/<br/>limiteLogin, verificarToken, permitirRoles, validar"]
     M --> C["controllers/<br/>petición y respuesta HTTP"]
     C --> S["services/<br/>consultas SQL con parámetros"]
     S --> P["config/db.js<br/>pool de conexiones"]
@@ -709,7 +709,7 @@ flowchart LR
 | Capa | Carpeta | Responsabilidad |
 | :--- | :--- | :--- |
 | Rutas | `src/routes/` | Asocian cada método y URL con sus middlewares y su controlador. |
-| Middlewares | `src/middlewares/` | Verifican el token (401), el rol (403) y la validación de los datos (400). Manejan los errores en un solo lugar. |
+| Middlewares | `src/middlewares/` | Limitan los intentos de inicio de sesión (429), verifican el token (401), el rol vigente (403) y la validación de los datos (400). Manejan los errores en un solo lugar. |
 | Validadores | `src/validators/` | Reglas de express-validator para el cuerpo, los ids y los filtros de cada módulo. |
 | Controladores | `src/controllers/` | Reciben la petición, llaman al servicio y arman la respuesta con su código HTTP. |
 | Servicios | `src/services/` | Hablan con la base de datos. No saben nada de HTTP. |
@@ -824,7 +824,7 @@ La URL base es `http://localhost:3000/api`. La documentación completa de cada e
 | Decisiones | `GET /decisiones` · `PUT /decisiones/:simulacionId` · `DELETE /decisiones/:simulacionId` | Cada usuario, solo las suyas |
 | Estadísticas | `GET /estadisticas` · `GET /estadisticas/pacientes` | Admin |
 
-**Códigos HTTP usados:** `200` consulta o edición, `201` creado, `204` eliminado, `400` datos inválidos, `401` sin token o con token inválido, `403` rol sin permiso, `404` no encontrado, `409` dato repetido y `500` error inesperado (sin detalles internos).
+**Códigos HTTP usados:** `200` consulta o edición, `201` creado, `204` eliminado, `400` datos inválidos, `401` sin token o con token inválido, `403` rol sin permiso, `404` no encontrado, `409` dato repetido o acción que no corresponde (por ejemplo, completar un capítulo con el anterior pendiente), `429` demasiados intentos fallidos de inicio de sesión y `500` error inesperado (sin detalles internos).
 
 ### Autenticación y roles
 
@@ -849,17 +849,20 @@ sequenceDiagram
 
 - El **registro público solo crea pacientes**: aunque el cuerpo de la petición diga `"rol": "admin"`, la API lo ignora. Los administradores se crean directamente en la base de datos (`UPDATE usuarios SET rol = 'admin' WHERE email = '...';`).
 - El token JWT [[13]](#referencias) lleva solo el `id` y el `rol` del usuario, firmados con `JWT_SECRET`. Nunca lleva la contraseña y vence en 2 horas (`JWT_EXPIRES_IN`).
-- `verificarToken` responde **401** si el token falta, fue alterado o venció. `permitirRoles('admin')` responde **403** si el rol no corresponde. Estas reglas protegen la API aunque alguien no use la interfaz.
+- `verificarToken` responde **401** si el token falta, fue alterado o venció, o si el usuario ya no existe. Después **lee el rol vigente desde la base de datos**, no el que quedó guardado en el token: si a un administrador le quitan el rol, la siguiente petición a una ruta de administración responde **403** aunque su token siga vigente.
+- `permitirRoles('admin')` responde **403** si el rol no corresponde. Estas reglas protegen la API aunque alguien no use la interfaz.
 
 ### Seguridad de la API
 
 | Riesgo | Medida aplicada |
 | :--- | :--- |
 | Robo de contraseñas | bcrypt con costo 10 [[14]](#referencias). La base de datos solo guarda el hash. |
-| Suplantación de usuario o de rol | JWT firmado con una clave secreta larga y aleatoria, con vencimiento, aceptando solo el algoritmo `HS256`. |
-| Acceso sin permiso | `verificarToken` (401) y `permitirRoles` (403) en cada ruta protegida. |
+| Suplantación de usuario o de rol | JWT firmado con una clave secreta aleatoria, con vencimiento, aceptando solo el algoritmo `HS256`. El servidor no arranca si `JWT_SECRET` tiene menos de 32 caracteres o es el valor de ejemplo. |
+| Acceso sin permiso | `verificarToken` (401) y `permitirRoles` (403) en cada ruta protegida. El rol se lee desde la base de datos en cada petición, así un administrador degradado pierde el acceso de inmediato. |
+| Fuerza bruta en el inicio de sesión | Después de 5 intentos fallidos en 15 minutos para el mismo correo desde la misma IP, la API responde `429` sin revisar la contraseña [[22]](#referencias)[[23]](#referencias). Los inicios correctos no suman, y se cuenta por IP y correo para que un ataque contra una cuenta no bloquee a otros pacientes que comparten la red del hospital. |
 | Inyección SQL | Todas las consultas usan parámetros (`$1`, `$2`...) [[15]](#referencias)[[19]](#referencias), y los ids y filtros se validan como números antes de llegar a la base de datos. |
-| Datos inválidos | express-validator en cada cuerpo, id y filtro [[16]](#referencias). Las reglas coinciden con las restricciones de las tablas. |
+| Datos inválidos | express-validator en cada cuerpo, id y filtro [[16]](#referencias). Las reglas coinciden con las restricciones de las tablas, y la base de datos también valida el formato del correo, que esté en minúsculas y el color `#RRGGBB` con restricciones `CHECK` [[12]](#referencias), por si un dato llega sin pasar por la API. |
+| Reglas de negocio solo en la interfaz | El desbloqueo progresivo de capítulos también se valida en la API: completar un capítulo cuando el anterior del mismo libro está pendiente responde `409`. |
 | Ver o modificar datos de otro paciente | El progreso y las decisiones usan el id que viene en el token, nunca uno enviado por el cliente. |
 | Campos no permitidos | Los servicios solo guardan los campos esperados (por ejemplo, el registro ignora `rol`). |
 | Filtración de información | Los errores 500 no muestran detalles internos, el login usa un mensaje genérico y las estadísticas de pacientes muestran solo el alias. |
@@ -897,7 +900,7 @@ sequenceDiagram
 
 ### Pruebas con Insomnia
 
-La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **79 peticiones** en 11 carpetas, con los casos correctos y los de error de cada módulo, y **93 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
+La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **86 peticiones** en 12 carpetas, con los casos correctos y los de error de cada módulo, y **100 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
 
 - Las peticiones obtienen el token solas desde **Login paciente** o **Login admin**, así que no hay que copiarlo a mano.
 - Las peticiones de editar y eliminar usan el id del registro creado en la misma carpeta.
@@ -908,11 +911,14 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 | 0. Estado del servidor | Que la API y la base de datos responden. |
 | 1. Autenticación | Login, registro (que no permite crear administradores), contraseña incorrecta, perfil sin token y token falso. |
 | 2 a 6. Libros, capítulos, personajes, simulaciones y recursos | CRUD completo, 403 para el paciente, validaciones (400), no encontrado (404), datos repetidos (409) y la transacción de simulación con opciones. |
-| 7 y 8. Progreso y decisiones | Datos propios del paciente, opción de otra simulación y reinicio de un libro. |
+| 7 y 8. Progreso y decisiones | Datos propios del paciente, opción de otra simulación, reinicio de un libro y completar un capítulo con el anterior pendiente (409). |
 | 9. Estadísticas | Solo administrador (403 para el paciente). |
 | 10. Errores generales | Ruta inexistente, JSON mal formado e intento de inyección SQL en el id. |
+| 11. Límite de intentos de login | Cinco intentos fallidos con el mismo correo y el sexto bloqueado (429). Si se vuelve a ejecutar antes de 15 minutos, todos responden 429. |
 
 **Cómo ejecutarla:** en Insomnia, **Import** → elegir el archivo. Después, desde el menú de la colección, **Run** (Collection Runner) ejecuta todas las peticiones en orden y muestra cuántas pruebas pasaron.
+
+**Prueba manual del rol vigente:** con el token de **Login admin**, **Estadísticas generales** responde `200`. En pgAdmin se ejecuta `UPDATE usuarios SET rol = 'patient' WHERE email = 'admin@demo.cl';` y, sin volver a iniciar sesión, la misma petición responde `403`. Al terminar se restaura con `UPDATE usuarios SET rol = 'admin' WHERE email = 'admin@demo.cl';`.
 
 ![Resultado del Collection Runner de Insomnia](backend/docs/evidencias/insomnia-runner.png)
 
@@ -942,6 +948,7 @@ El frontend también tiene pruebas automáticas: una prueba unitaria con Vitest 
 | `pg` | ^8.23.1 | Conexión a PostgreSQL y consultas con parámetros [[19]](#referencias). |
 | `bcryptjs` | ^3.0.3 | Encriptación de contraseñas [[14]](#referencias). |
 | `jsonwebtoken` | ^9.0.3 | Creación y verificación de los tokens JWT [[13]](#referencias). |
+| `express-rate-limit` | ^8.7.1 | Límite de intentos fallidos de inicio de sesión [[22]](#referencias). |
 | `express-validator` | ^7.3.2 | Validación de los datos de entrada [[16]](#referencias). |
 | `helmet` | ^8.3.0 | Cabeceras HTTP de seguridad [[20]](#referencias). |
 | `cors` | ^2.8.6 | Permite que solo el frontend llame a la API. |
@@ -1028,7 +1035,7 @@ Luego hay que completar el archivo `.env`:
 | `DB_USER` | Usuario de PostgreSQL | `postgres` |
 | `DB_PASSWORD` | Contraseña de ese usuario | La de tu instalación de PostgreSQL |
 | `CORS_ORIGIN` | URL del frontend que puede llamar a la API | `http://localhost:5173` |
-| `JWT_SECRET` | Clave secreta para firmar los tokens | Una cadena larga y aleatoria (ver abajo) |
+| `JWT_SECRET` | Clave secreta para firmar los tokens. **Mínimo 32 caracteres**: con una más corta o con el valor de ejemplo, el servidor no arranca | Una cadena aleatoria de 64 caracteres (ver abajo) |
 | `JWT_EXPIRES_IN` | Duración del token | `2h` |
 
 Para generar `JWT_SECRET`:
@@ -1115,7 +1122,7 @@ Para crear otro administrador, primero hay que registrarlo como paciente y luego
 │   │   ├── app.js               Express: helmet, CORS, JSON, rutas y manejo de errores
 │   │   ├── config/              db.js (pool de conexiones a PostgreSQL)
 │   │   ├── routes/              Rutas de cada módulo e index.js, que las une bajo /api
-│   │   ├── middlewares/         auth.js (verificarToken, permitirRoles), validate.js, errorHandler.js
+│   │   ├── middlewares/         auth.js (verificarToken, permitirRoles), limiteLogin.js, validate.js, errorHandler.js
 │   │   ├── validators/          Reglas de validación de cada módulo
 │   │   ├── controllers/         Reciben la petición y arman la respuesta
 │   │   ├── services/            Consultas SQL con parámetros
@@ -1177,3 +1184,5 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 19. node-postgres. *Queries* (consultas con parámetros). https://node-postgres.com/features/queries
 20. Helmet. *Helmet.js*. https://helmetjs.github.io/
 21. Vite. *Build Options: build.target*. https://vite.dev/config/build-options#build-target
+22. express-rate-limit. *Documentación*. https://www.npmjs.com/package/express-rate-limit
+23. OWASP. *Authentication Cheat Sheet* (protección contra ataques automatizados). https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html

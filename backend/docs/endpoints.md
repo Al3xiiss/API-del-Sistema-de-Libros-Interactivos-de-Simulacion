@@ -65,7 +65,8 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
 | `401 Unauthorized` | Falta el token, es inválido o venció. También se usa para correo o contraseña incorrectos |
 | `403 Forbidden` | El usuario tiene sesión, pero su rol no le permite la acción |
 | `404 Not Found` | El registro o la ruta no existe |
-| `409 Conflict` | Valor repetido, por ejemplo un correo ya registrado o un capítulo con un número ya usado |
+| `409 Conflict` | Valor repetido (por ejemplo, un correo ya registrado) o una acción que no corresponde al estado actual, como completar un capítulo cuando el anterior está pendiente |
+| `429 Too Many Requests` | Demasiados intentos fallidos de inicio de sesión: 5 en 15 minutos para el mismo correo desde la misma IP |
 | `500 Internal Server Error` | Error inesperado. Se registra en la terminal del servidor y al cliente solo le llega un mensaje genérico |
 
 ### Ids y filtros
@@ -84,7 +85,8 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
 
-3. El token dura **2 horas** (`JWT_EXPIRES_IN`). Lleva el `id` y el `rol` del usuario, firmados con `JWT_SECRET`. Nunca lleva la contraseña.
+3. El token dura **2 horas** (`JWT_EXPIRES_IN`). Lleva el `id` y el `rol` del usuario, firmados con `JWT_SECRET` (mínimo 32 caracteres; si es más corta, el servidor no arranca). Nunca lleva la contraseña.
+4. En cada petición protegida, la API **vuelve a leer el rol desde la base de datos**. Si a un administrador le quitan el rol, pierde el acceso de inmediato aunque su token siga vigente, y si su cuenta se elimina, el token deja de servir (`401`).
 
 | Rol | Valor en la API | Cómo se crea |
 |---|---|---|
@@ -128,7 +130,7 @@ En las tablas, **Acceso** indica quién puede usar la ruta: Público (sin token)
 | Campo | Reglas |
 |---|---|
 | `alias` | Obligatorio. De 3 a 20 caracteres: letras, números, punto o guion bajo |
-| `email` | Obligatorio. Correo válido |
+| `email` | Obligatorio. Correo válido. Se guarda en minúsculas; la base de datos también exige el formato y las minúsculas (`CHECK`) |
 | `password` | Obligatorio. De 8 a 72 caracteres, con al menos una mayúscula y un número |
 
 ```json
@@ -155,6 +157,8 @@ En las tablas, **Acceso** indica quién puede usar la ruta: Público (sin token)
 
 Si el correo no existe o la contraseña es incorrecta, responde `401` con el mismo mensaje en los dos casos: `Correo o contraseña incorrectos`. Así no revela qué correos están registrados.
 
+Después de **5 intentos fallidos en 15 minutos** para el mismo correo desde la misma IP, responde `429` (*Demasiados intentos fallidos. Espera 15 minutos antes de volver a intentar*) sin revisar la contraseña. Los inicios de sesión correctos no suman. Se cuenta por IP y correo porque en un hospital muchos pacientes pueden compartir la misma IP: así un ataque contra una cuenta no bloquea a los demás.
+
 ### Libros
 
 | Método | Ruta | Acceso | Descripción |
@@ -169,7 +173,7 @@ Si el correo no existe o la contraseña es incorrecta, responde `401` con el mis
 |---|---|
 | `titulo` | Obligatorio. De 3 a 80 caracteres |
 | `sinopsis` | Obligatorio. De 10 a 400 caracteres |
-| `color_portada` | Opcional. Formato `#RRGGBB`. Si no se envía al crear, se usa `#5B4A8B`; al editar, se mantiene el que tenía |
+| `color_portada` | Opcional. Formato `#RRGGBB`, exigido también por la base de datos (`CHECK`). Si no se envía al crear, se usa `#5B4A8B`; al editar, se mantiene el que tenía |
 
 ```json
 {
@@ -361,7 +365,7 @@ El usuario **siempre se obtiene del token**: cada usuario solo ve y modifica su 
 | Cuerpo | Efecto |
 |---|---|
 | `{}` | Registra que el capítulo se abrió (para "Continúa donde lo dejaste"). Si ya estaba completado, sigue completado |
-| `{ "completado": true }` | Marca el capítulo como completado |
+| `{ "completado": true }` | Marca el capítulo como completado. **Desbloqueo progresivo:** si el capítulo anterior del mismo libro no está completado, responde `409` (*Debes completar el capítulo anterior antes de completar este*). El primer capítulo de cada libro siempre se puede completar |
 
 Respuesta de `GET /progreso`:
 
@@ -448,7 +452,11 @@ Igual que el progreso, el usuario se obtiene del token.
 |---|---|
 | Contraseñas encriptadas con **bcrypt** (costo 10). La base de datos nunca guarda la contraseña | `services/auth.service.js` |
 | **JWT** firmado con `JWT_SECRET`, con vencimiento y solo el algoritmo `HS256` aceptado | `services/auth.service.js`, `middlewares/auth.js` |
-| Control de **roles**: `verificarToken` (401) y `permitirRoles('admin')` (403) | `middlewares/auth.js` |
+| Control de **roles**: `verificarToken` (401) y `permitirRoles('admin')` (403). El rol se lee desde la base de datos en cada petición, así un administrador degradado pierde el acceso de inmediato | `middlewares/auth.js` |
+| **Límite de intentos de login**: 5 fallidos en 15 minutos por IP y correo → `429` | `middlewares/limiteLogin.js` |
+| `JWT_SECRET` de **32 caracteres o más**; el servidor no arranca con una clave corta o con la de ejemplo | `server.js` |
+| Reglas de negocio en la API, no solo en la interfaz: un capítulo no se puede completar si el anterior está pendiente (`409`) | `services/progreso.service.js` |
+| La base de datos también valida el formato del correo, que esté en minúsculas y el color `#RRGGBB` (`CHECK`) | `database/database.sql` |
 | **Validación** de todos los datos de entrada, filtros e ids con express-validator | `validators/` |
 | Protección contra **inyección SQL**: todas las consultas usan parámetros (`$1`, `$2`...), nunca texto concatenado | `services/` |
 | Los datos propios (progreso y decisiones) usan el id del **token**, nunca uno enviado por el cliente | `services/progreso.service.js`, `services/decisiones.service.js` |
@@ -463,7 +471,7 @@ Igual que el progreso, el usuario se obtiene del token.
 
 ## Pruebas con Insomnia
 
-La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **79 peticiones** en 11 carpetas: los casos correctos y los de error (400, 401, 403, 404 y 409) de cada módulo. Cada petición incluye:
+La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **86 peticiones** en 12 carpetas, con **100 pruebas automáticas**: los casos correctos y los de error (400, 401, 403, 404, 409 y 429) de cada módulo. Cada petición incluye:
 
 - Una descripción, en la pestaña **Docs**, con la respuesta esperada.
 - Pruebas automáticas.
@@ -480,4 +488,14 @@ La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactiv
 
 Usa el **Collection Runner**: clic derecho sobre la colección o sobre una carpeta y **Run**. Las peticiones se ejecutan en orden y al final se ve cuántas pruebas pasaron.
 
-La colección deja los datos como estaban: todo lo que crea en una carpeta lo elimina al final de esa misma carpeta. La única excepción es el paciente `paciente_insomnia`, que se registra la primera vez. En las siguientes ejecuciones esa petición responde `409` y su prueba acepta las dos respuestas.
+La colección deja los datos como estaban: todo lo que crea en una carpeta lo elimina al final de esa misma carpeta. La única excepción es el paciente `paciente_insomnia`, que se registra la primera vez. En las siguientes ejecuciones esa petición responde `409` y su prueba acepta las dos respuestas. Lo mismo pasa con la carpeta **11. Límite de intentos de login**: si se vuelve a ejecutar antes de 15 minutos, el correo de prueba sigue bloqueado y los intentos responden `429`.
+
+### Pruebas manuales
+
+**Rol vigente (administrador degradado):**
+1. Inicia sesión con **Login admin** y envía **Estadísticas generales** → `200`.
+2. En pgAdmin: `UPDATE usuarios SET rol = 'patient' WHERE email = 'admin@demo.cl';`
+3. Sin volver a iniciar sesión, envía otra vez **Estadísticas generales** o **Crear libro** → `403`.
+4. Restaura el rol: `UPDATE usuarios SET rol = 'admin' WHERE email = 'admin@demo.cl';`
+
+**Restricciones de la base de datos (sin pasar por la API):** en pgAdmin, `INSERT INTO libros (titulo, sinopsis, color_portada) VALUES ('Prueba', 'Sinopsis de prueba', 'rojo');` falla con `libros_color_formato`, y un correo con mayúsculas o sin `@` falla con `usuarios_email_minusculas` o `usuarios_email_formato`.

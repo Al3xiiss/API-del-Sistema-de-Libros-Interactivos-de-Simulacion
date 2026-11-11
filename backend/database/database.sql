@@ -16,7 +16,9 @@ DROP TABLE IF EXISTS decisiones, progreso_capitulos, recursos, opciones_simulaci
 CREATE TABLE usuarios (
   id            SERIAL       PRIMARY KEY,
   alias         VARCHAR(20)  NOT NULL UNIQUE CHECK (char_length(alias) >= 3),
-  email         VARCHAR(255) NOT NULL UNIQUE,
+  email         VARCHAR(255) NOT NULL UNIQUE
+                CONSTRAINT usuarios_email_formato CHECK (email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                CONSTRAINT usuarios_email_minusculas CHECK (email = LOWER(email)),
   password_hash VARCHAR(255) NOT NULL,                
   rol           VARCHAR(10)  NOT NULL DEFAULT 'patient' CHECK (rol IN ('patient', 'admin')),
   creado_en     TIMESTAMP    NOT NULL DEFAULT NOW()
@@ -27,7 +29,8 @@ CREATE TABLE libros (
   id            SERIAL       PRIMARY KEY,
   titulo        VARCHAR(80)  NOT NULL CHECK (char_length(titulo) >= 3),
   sinopsis      VARCHAR(400) NOT NULL CHECK (char_length(sinopsis) >= 10),
-  color_portada VARCHAR(7)   NOT NULL DEFAULT '#5B4A8B',
+  color_portada VARCHAR(7)   NOT NULL DEFAULT '#5B4A8B'
+                CONSTRAINT libros_color_formato CHECK (color_portada ~ '^#[0-9A-Fa-f]{6}$'),
   creado_en     TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 

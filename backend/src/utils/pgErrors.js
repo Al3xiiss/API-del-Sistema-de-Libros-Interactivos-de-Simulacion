@@ -10,6 +10,13 @@ const CODIGOS = {
   '22P02': { status: 400, mensaje: 'Algún dato tiene un formato inválido' },
 };
 
+// Mensajes para restricciones CHECK con nombre definidas en database.sql
+const MENSAJES_RESTRICCIONES = {
+  usuarios_email_formato: 'El correo no tiene un formato válido',
+  usuarios_email_minusculas: 'El correo debe guardarse en minúsculas',
+  libros_color_formato: 'El color debe tener el formato #RRGGBB, por ejemplo #5B4A8B',
+};
+
 // "mensajes" permite dar un texto específico según la restricción que falló.
 // Ejemplo: { capitulos_libro_id_fkey: 'El libro indicado no existe' }
 export function traducirErrorPg(err, mensajes = {}) {
@@ -17,5 +24,6 @@ export function traducirErrorPg(err, mensajes = {}) {
   if (!conocido) {
     return err;
   }
-  return new HttpError(conocido.status, mensajes[err.constraint] ?? conocido.mensaje);
+  const mensaje = mensajes[err.constraint] ?? MENSAJES_RESTRICCIONES[err.constraint] ?? conocido.mensaje;
+  return new HttpError(conocido.status, mensaje);
 }

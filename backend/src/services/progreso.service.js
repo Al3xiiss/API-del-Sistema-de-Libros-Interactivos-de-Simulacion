@@ -44,10 +44,37 @@ export async function obtenerMiProgreso(usuarioId) {
   };
 }
 
+// Desbloqueo progresivo: un capítulo solo se puede completar si el anterior del mismo libro
+// ya está completado. Así la regla no depende solo del frontend.
+async function validarCapituloAnterior(usuarioId, capituloId) {
+  const { rows } = await pool.query(
+    `SELECT anterior.id AS anterior_id, COALESCE(p.completado, FALSE) AS anterior_completado
+     FROM capitulos actual
+     LEFT JOIN LATERAL (
+       SELECT c.id FROM capitulos c
+       WHERE c.libro_id = actual.libro_id AND c.numero < actual.numero
+       ORDER BY c.numero DESC
+       LIMIT 1
+     ) anterior ON TRUE
+     LEFT JOIN progreso_capitulos p ON p.capitulo_id = anterior.id AND p.usuario_id = $2
+     WHERE actual.id = $1`,
+    [capituloId, usuarioId],
+  );
+  if (!rows[0]) {
+    throw new HttpError(404, 'Capítulo no encontrado');
+  }
+  if (rows[0].anterior_id && !rows[0].anterior_completado) {
+    throw new HttpError(409, 'Debes completar el capítulo anterior antes de completar este');
+  }
+}
+
 // Registra que el paciente abrió un capítulo o lo completó.
 // Si ya existía el registro, lo actualiza (INSERT ... ON CONFLICT = "upsert").
 // Si no se envía "completado", se mantiene el valor anterior (abrir de nuevo no borra lo completado).
 export async function actualizarCapitulo(usuarioId, capituloId, completado) {
+  if (completado === true) {
+    await validarCapituloAnterior(usuarioId, capituloId);
+  }
   try {
     const { rows } = await pool.query(
       `INSERT INTO progreso_capitulos (usuario_id, capitulo_id, completado)

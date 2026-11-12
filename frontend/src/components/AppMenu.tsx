@@ -7,7 +7,7 @@ import {
   IonMenu, IonMenuToggle, IonNote, IonToolbar,
 } from '@ionic/react';
 import {
-  bookOutline, documentTextOutline, gridOutline, homeOutline, logOutOutline, peopleOutline,
+  bookOutline, documentTextOutline, gitBranchOutline, gridOutline, homeOutline, logOutOutline, peopleOutline,
   personOutline, playCircleOutline, statsChartOutline,
 } from 'ionicons/icons';
 import { useLocation } from 'react-router-dom';
@@ -25,6 +25,7 @@ const ADMIN_ITEMS = [
   { title: 'Gestión de libros', url: '/admin/books', icon: bookOutline },
   { title: 'Gestión de capítulos', url: '/admin/chapters', icon: documentTextOutline },
   { title: 'Gestión de personajes', url: '/admin/characters', icon: peopleOutline },
+  { title: 'Gestión de simulaciones', url: '/admin/simulations', icon: gitBranchOutline },
 ];
 
 const AppMenu: React.FC = () => {

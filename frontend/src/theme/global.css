@@ -379,3 +379,14 @@ ion-menu ion-list {
   font-size: 1.25rem;
   font-weight: 700;
 }
+
+/*  Gestión de simulaciones: tarjeta de cada opción (EF)  */
+.option-card {
+  margin: 0;
+}
+.option-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+}

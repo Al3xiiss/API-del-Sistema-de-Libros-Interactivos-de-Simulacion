@@ -12,6 +12,8 @@ import AdminChaptersPage from '../pages/admin/AdminChaptersPage';
 import AdminCharacterFormPage from '../pages/admin/AdminCharacterFormPage';
 import AdminCharactersPage from '../pages/admin/AdminCharactersPage';
 import AdminHomePage from '../pages/admin/AdminHomePage';
+import AdminSimulationFormPage from '../pages/admin/AdminSimulationFormPage';
+import AdminSimulationsPage from '../pages/admin/AdminSimulationsPage';
 
 const AdminLayout: React.FC = () => (
   // `ionPage` es obligatorio en un outlet anidado que se renderiza directo desde una Route.
@@ -26,6 +28,9 @@ const AdminLayout: React.FC = () => (
     <Route path="chapters" element={<AdminChaptersPage />} />
     <Route path="chapters/create" element={<AdminChapterFormPage />} />
     <Route path="chapters/:id/edit" element={<AdminChapterFormPage />} />
+    <Route path="simulations" element={<AdminSimulationsPage />} />
+    <Route path="simulations/create" element={<AdminSimulationFormPage />} />
+    <Route path="simulations/:id/edit" element={<AdminSimulationFormPage />} />
     <Route path="*" element={<Navigate to="/admin" replace />} />
   </IonRouterOutlet>
 );

@@ -2,7 +2,7 @@
 import {
   IonButton, IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonIcon, IonPage, IonRow,
 } from '@ionic/react';
-import { addOutline, bookOutline, peopleOutline } from 'ionicons/icons';
+import { addOutline, bookOutline, documentTextOutline, peopleOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
@@ -52,9 +52,9 @@ const AdminHomePage: React.FC = () => {
               <IonIcon aria-hidden="true" slot="start" icon={bookOutline} />
               Gestión de libros
             </IonButton>
-            <IonButton expand="block" routerLink="/admin/characters">
-              <IonIcon aria-hidden="true" slot="start" icon={peopleOutline} />
-              Gestión de personajes
+            <IonButton expand="block" routerLink="/admin/chapters">
+              <IonIcon aria-hidden="true" slot="start" icon={documentTextOutline} />
+              Gestión de capítulos
             </IonButton>
             <IonButton expand="block" fill="outline" routerLink="/admin/books/create">
               <IonIcon aria-hidden="true" slot="start" icon={addOutline} />

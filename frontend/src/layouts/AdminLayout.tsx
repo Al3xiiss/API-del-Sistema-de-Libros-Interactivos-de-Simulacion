@@ -7,6 +7,8 @@ import { IonRouterOutlet } from '@ionic/react';
 import { Navigate, Route } from 'react-router-dom';
 import AdminBookFormPage from '../pages/admin/AdminBookFormPage';
 import AdminBooksPage from '../pages/admin/AdminBooksPage';
+import AdminChapterFormPage from '../pages/admin/AdminChapterFormPage';
+import AdminChaptersPage from '../pages/admin/AdminChaptersPage';
 import AdminCharacterFormPage from '../pages/admin/AdminCharacterFormPage';
 import AdminCharactersPage from '../pages/admin/AdminCharactersPage';
 import AdminHomePage from '../pages/admin/AdminHomePage';
@@ -21,6 +23,9 @@ const AdminLayout: React.FC = () => (
     <Route path="characters" element={<AdminCharactersPage />} />
     <Route path="characters/create" element={<AdminCharacterFormPage />} />
     <Route path="characters/:id/edit" element={<AdminCharacterFormPage />} />
+    <Route path="chapters" element={<AdminChaptersPage />} />
+    <Route path="chapters/create" element={<AdminChapterFormPage />} />
+    <Route path="chapters/:id/edit" element={<AdminChapterFormPage />} />
     <Route path="*" element={<Navigate to="/admin" replace />} />
   </IonRouterOutlet>
 );

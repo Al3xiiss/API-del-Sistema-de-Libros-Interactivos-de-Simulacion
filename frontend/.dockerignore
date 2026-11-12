@@ -1,0 +1,13 @@
+# Dependencias y compilaciones anteriores: se generan dentro de la imagen
+node_modules
+dist
+
+# Variables locales (en Docker la URL de la API se define en el Dockerfile)
+.env
+.env.*
+
+# Archivos que no se necesitan para compilar
+cypress/videos
+cypress/screenshots
+Dockerfile
+.dockerignore

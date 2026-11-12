@@ -12,6 +12,8 @@ import AdminChaptersPage from '../pages/admin/AdminChaptersPage';
 import AdminCharacterFormPage from '../pages/admin/AdminCharacterFormPage';
 import AdminCharactersPage from '../pages/admin/AdminCharactersPage';
 import AdminHomePage from '../pages/admin/AdminHomePage';
+import AdminResourceFormPage from '../pages/admin/AdminResourceFormPage';
+import AdminResourcesPage from '../pages/admin/AdminResourcesPage';
 import AdminSimulationFormPage from '../pages/admin/AdminSimulationFormPage';
 import AdminSimulationsPage from '../pages/admin/AdminSimulationsPage';
 
@@ -31,6 +33,9 @@ const AdminLayout: React.FC = () => (
     <Route path="simulations" element={<AdminSimulationsPage />} />
     <Route path="simulations/create" element={<AdminSimulationFormPage />} />
     <Route path="simulations/:id/edit" element={<AdminSimulationFormPage />} />
+    <Route path="resources" element={<AdminResourcesPage />} />
+    <Route path="resources/create" element={<AdminResourceFormPage />} />
+    <Route path="resources/:id/edit" element={<AdminResourceFormPage />} />
     <Route path="*" element={<Navigate to="/admin" replace />} />
   </IonRouterOutlet>
 );

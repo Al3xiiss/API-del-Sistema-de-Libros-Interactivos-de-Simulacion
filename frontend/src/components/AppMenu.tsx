@@ -26,6 +26,7 @@ const ADMIN_ITEMS = [
   { title: 'Gestión de capítulos', url: '/admin/chapters', icon: documentTextOutline },
   { title: 'Gestión de personajes', url: '/admin/characters', icon: peopleOutline },
   { title: 'Gestión de simulaciones', url: '/admin/simulations', icon: gitBranchOutline },
+  { title: 'Gestión de recursos', url: '/admin/resources', icon: playCircleOutline },
 ];
 
 const AppMenu: React.FC = () => {

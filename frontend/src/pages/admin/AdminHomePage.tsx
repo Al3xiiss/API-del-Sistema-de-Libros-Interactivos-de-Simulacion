@@ -2,7 +2,9 @@
 import {
   IonButton, IonCard, IonCardContent, IonCol, IonContent, IonGrid, IonIcon, IonPage, IonRow,
 } from '@ionic/react';
-import { addOutline, bookOutline, documentTextOutline, gitBranchOutline, peopleOutline } from 'ionicons/icons';
+import {
+  addOutline, bookOutline, documentTextOutline, gitBranchOutline, peopleOutline, playCircleOutline,
+} from 'ionicons/icons';
 import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
@@ -47,7 +49,7 @@ const AdminHomePage: React.FC = () => {
           </IonGrid>
 
           <h2 className="section-title">Gestión de contenido</h2>
-<div className="stacked-actions">
+          <div className="stacked-actions">
             <IonButton expand="block" routerLink="/admin/books">
               <IonIcon aria-hidden="true" slot="start" icon={bookOutline} />
               Gestión de libros
@@ -63,6 +65,10 @@ const AdminHomePage: React.FC = () => {
             <IonButton expand="block" routerLink="/admin/simulations">
               <IonIcon aria-hidden="true" slot="start" icon={gitBranchOutline} />
               Gestión de simulaciones
+            </IonButton>
+            <IonButton expand="block" routerLink="/admin/resources">
+              <IonIcon aria-hidden="true" slot="start" icon={playCircleOutline} />
+              Gestión de recursos
             </IonButton>
             <IonButton expand="block" fill="outline" routerLink="/admin/books/create">
               <IonIcon aria-hidden="true" slot="start" icon={addOutline} />

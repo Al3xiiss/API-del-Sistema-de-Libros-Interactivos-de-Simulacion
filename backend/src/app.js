@@ -8,6 +8,11 @@ import { notFound, errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
 
+// En Docker, nginx está delante de la API y envía la IP real del usuario 
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', Number(process.env.TRUST_PROXY));
+}
+
 app.use(helmet());                                  // cabeceras HTTP de seguridad
 app.use(cors({ origin: process.env.CORS_ORIGIN })); // solo el frontend puede llamar a la API
 app.use(express.json());                            // lee el cuerpo JSON de las peticiones

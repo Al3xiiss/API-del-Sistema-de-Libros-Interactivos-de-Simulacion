@@ -44,6 +44,7 @@
     - [Backend](#2-backend)
     - [Frontend](#3-frontend)
     - [Ejecución y uso](#ejecución-y-uso)
+    - [Despliegue con Docker](#despliegue-con-docker)
     - [Estructura del proyecto](#estructura-del-proyecto)
 10. [Uso de herramientas de IA](#uso-de-herramientas-de-ia)
 11. [Referencias](#referencias)
@@ -976,6 +977,7 @@ El frontend también tiene pruebas automáticas: una prueba unitaria con Vitest 
 - **PostgreSQL** (base de datos relacional)
 - **JWT + bcrypt** (autenticación y contraseñas)
 - **Insomnia** (pruebas de la API)
+- **Docker + Docker Compose** (despliegue local con contenedores) y **nginx** (sirve el frontend y reenvía /api)
 - **Figma** (prototipo UI/UX)
 - **Capacitor** (empaquetado móvil proyectado, Android 10+ / iOS 16.4+)
 
@@ -991,6 +993,7 @@ El frontend también tiene pruebas automáticas: una prueba unitaria con Vitest 
 | PostgreSQL | 16 o superior (el equipo usa la 18) | Base de datos |
 | pgAdmin 4 | Opcional | Crear y revisar la base de datos |
 | Insomnia | Opcional | Probar la API |
+| Docker Desktop | Con Docker Compose v2 | Levantar todo con contenedores (alternativa a la instalación manual) |
 
 La versión de la EP2 (backend, frontend integrado y script SQL) está en la rama `backend`:
 
@@ -1104,12 +1107,100 @@ Para crear otro administrador, primero hay que registrarlo como paciente y luego
 5. Para ver la versión móvil en el computador, usar el modo dispositivo de DevTools (`F12` → ícono de celular).
 6. En la API, con la colección de Insomnia: **Crear libro como paciente** responde `403` y **Mi perfil sin token** responde `401`.
 
+## Despliegue con Docker
+
+La aplicación completa (base de datos, API y frontend) se levanta con contenedores, sin instalar Node.js ni PostgreSQL en el equipo. Solo se necesita **Docker Desktop** con Docker Compose v2.
+
+```mermaid
+flowchart LR
+    U["Navegador<br/>localhost:8080"] --> F["frontend<br/>nginx: sirve la app compilada"]
+    F -->|"/api"| A["api<br/>Node.js + Express"]
+    A --> D[("db<br/>PostgreSQL 18")]
+    D --- V[("Volumen db-data")]
+```
+
+| Servicio | Imagen | Puerto en el equipo | Función |
+| :--- | :--- | :--- | :--- |
+| `db` | `postgres:18-alpine` | `127.0.0.1:5433` (solo para pgAdmin) | Base de datos. La primera vez ejecuta `backend/database/database.sql`. |
+| `api` | `backend/Dockerfile` | No se publica | API REST. Solo se llega a ella a través de nginx. |
+| `frontend` | `frontend/Dockerfile` | `8080` | nginx sirve el frontend compilado y reenvía `/api` a la API. |
+
+**Decisiones de la configuración:**
+- **Imágenes livianas y seguras:** se usan imágenes Alpine. La API instala solo dependencias de producción (`npm ci --omit=dev`) y se ejecuta con el usuario `node`, no como root. El frontend se construye en dos etapas: Node compila y la imagen final solo tiene nginx con la carpeta `dist`.
+- **Un solo punto de entrada:** el navegador solo habla con `localhost:8080`. nginx reenvía `/api` al contenedor `api`, así no hay problemas de CORS y ni la API ni la base de datos quedan expuestas.
+- **Orden de arranque:** con `depends_on` y `healthcheck`, la API espera a que PostgreSQL esté listo y nginx espera a que la API responda en `/api/health`.
+- **Secretos fuera de las imágenes:** `.env` está en `.dockerignore` y en `.gitignore`. Las claves se entregan como variables de entorno al iniciar los contenedores.
+- **IP real en el límite de login:** nginx envía la IP del usuario en `X-Forwarded-For` y la API confía en ese proxy con `TRUST_PROXY=1`.
+- **Optimización:** nginx comprime las respuestas con gzip y deja en caché por un año los archivos de `assets/`, que cambian de nombre en cada build.
+
+### Variables de entorno
+
+Se definen en un archivo `.env` en la raíz del repositorio, a partir de la plantilla `.env.example`. Este archivo no se sube al repositorio.
+
+| Variable | Descripción | Valor |
+| :--- | :--- | :--- |
+| `DB_PASSWORD` | Contraseña de PostgreSQL dentro del contenedor | Letras y números |
+| `JWT_SECRET` | Clave para firmar los tokens (mínimo 32 caracteres) | Una cadena aleatoria (ver abajo) |
+
+Para generar `JWT_SECRET` sin tener Node.js instalado:
+
+```bash
+docker run --rm node:22-alpine node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Las demás variables de la API (`DB_HOST=db`, `CORS_ORIGIN`, `TRUST_PROXY`, etc.) ya están en `docker-compose.yml`. Si falta `DB_PASSWORD` o `JWT_SECRET`, Docker Compose se detiene e indica cuál falta.
+
+### Cómo levantarlo
+
+```bash
+# 1. Variables de entorno (una sola vez). En PowerShell: Copy-Item .env.example .env
+cp .env.example .env
+# Editar .env y completar DB_PASSWORD y JWT_SECRET
+
+# 2. Construir las imágenes y levantar los tres servicios
+docker compose up --build -d
+
+# 3. Revisar el estado: db y api deben quedar "healthy"
+docker compose ps
+```
+
+Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de prueba](#cuentas-de-prueba). La API responde en `http://localhost:8080/api/health`. Para usar la colección de Insomnia contra Docker, crear un sub-ambiente **Docker** con `base_url` = `http://localhost:8080/api`. Para revisar la base con pgAdmin: servidor `localhost`, puerto `5433`, usuario `postgres` y la contraseña de `DB_PASSWORD`.
+
+| Comando | Uso |
+| :--- | :--- |
+| `docker compose ps` | Estado de los contenedores |
+| `docker compose logs api` | Registros de un servicio (`db`, `api` o `frontend`) |
+| `docker compose stop` / `docker compose start` | Apagar y encender sin borrar nada |
+| `docker compose up --build -d` | Reconstruir después de cambiar el código |
+| `docker compose down` | Eliminar los contenedores (los datos quedan en el volumen) |
+| `docker compose down -v` | Eliminar también la base de datos |
+
+`database.sql` solo se ejecuta cuando el volumen está vacío. Si se modifica el script, hay que ejecutar `docker compose down -v` y volver a levantar.
+
+### Evidencia de despliegue local
+
+![Docker Compose construye las imágenes y levanta los tres servicios](img/docker/docker-compose-up.png)
+
+![Docker Desktop con los contenedores db, api y frontend en ejecución](img/docker/docker-desktop.png)
+
+![La API responde a través de nginx en localhost:8080/api/health](img/docker/docker-health.png)
+
+![Inicio del paciente en la aplicación servida con Docker](img/docker/docker-app-paciente.png)
+
+![Panel de administración en la aplicación servida con Docker](img/docker/docker-app-admin.png)
+
+![Colección de Insomnia contra Docker: 100 de 100 pruebas](img/docker/docker-insomnia-runner.png)
+
+---
+
 ## Estructura del proyecto
 
 ```text
 .
 ├── README.md
 ├── img/                         Imágenes del README
+├── docker-compose.yml           Levanta db, api y frontend
+├── .env.example                 Variables de Docker Compose (copiar como .env)
 ├── backend/
 │   ├── database/
 │   │   └── database.sql         Tablas, restricciones y datos de prueba
@@ -1128,9 +1219,12 @@ Para crear otro administrador, primero hay que registrarlo como paciente y luego
 │   │   ├── services/            Consultas SQL con parámetros
 │   │   └── utils/               httpError, pgErrors (errores de PostgreSQL), transaccion
 │   ├── .env.example             Plantilla de variables de entorno
+│   ├── Dockerfile               Imagen de la API    
 │   └── package.json
 └── frontend/
     ├── .env.example             URL de la API (opcional)
+    ├── Dockerfile               Compila con Node y sirve con nginx
+    ├── nginx.conf               Sirve el frontend y reenvía /api a la API
     ├── cypress/                 Pruebas end-to-end
     └── src/
         ├── App.tsx              IonApp + IonReactRouter + IonSplitPane (menú lateral en web)
@@ -1158,6 +1252,8 @@ Conforme a lo permitido por la pauta, el equipo utilizó asistentes de inteligen
 
 - **EP1:** para revisar la documentación frente a la rúbrica y generar una base inicial del código del frontend.
 - **EP2:** para guiar paso a paso la construcción del backend (servidor, base de datos, autenticación y CRUD) y generar una base del código de los módulos, de la integración con Axios, de la colección de Insomnia y de la documentación de la API.
+
+-- **EF:** para guiar paso a paso las correcciones de seguridad de la API y la configuración de Docker (Dockerfiles, nginx y docker-compose), que el equipo creó, ejecutó y probó en sus equipos.
 
 El código fue revisado, adaptado, probado y modificado por el equipo, que también ejecutó las pruebas en Insomnia y en el navegador. Los bocetos y prototipos de Figma se construyeron manualmente.
 

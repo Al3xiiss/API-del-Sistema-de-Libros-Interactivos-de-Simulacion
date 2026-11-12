@@ -1,0 +1,58 @@
+# Levanta los 3 servicios del proyecto: base de datos, API y frontend
+name: libros-interactivos
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: libros_interactivos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en el archivo .env}
+    volumes:
+      # Los datos se guardan en un volumen y no se pierden al apagar los contenedores
+      - db-data:/var/lib/postgresql
+      # Solo la primera vez (volumen vacío) ejecuta el script con las tablas y los datos de prueba
+      - ./backend/database/database.sql:/docker-entrypoint-initdb.d/01-database.sql:ro
+    ports:
+      # Para revisar la base con pgAdmin: puerto 5433  (el 5432 lo usa PostgreSQL local)
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      # Lista cuando acepta conexiones por red (después de ejecutar el script)
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d libros_interactivos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # API REST (Node.js + Express)
+  api:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: libros_interactivos
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el archivo .env}
+      JWT_EXPIRES_IN: 2h
+      CORS_ORIGIN: http://localhost:8080
+      TRUST_PROXY: 1
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Frontend (Ionic + React) servido por nginx, que además reenvía /api a la API
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  db-data:

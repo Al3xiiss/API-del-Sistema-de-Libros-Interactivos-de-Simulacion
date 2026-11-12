@@ -1,6 +1,6 @@
 /**
- * Utilidades para simular una API con localStorage durante la EP1.
- * En la EP2 los servicios reemplazan estas llamadas por fetch/Axios.
+ * Lectura y escritura segura en localStorage.
+ * En la EP2 solo se usa para guardar la sesión (token y usuario); los datos vienen de la API.
  */
 
 export function readJSON<T>(key: string, fallback: T): T {
@@ -27,8 +27,3 @@ export function removeKey(key: string): void {
     // Ignorado a propósito.
   }
 }
-
-/** Simula la latencia de red para poder mostrar estados de carga. */
-export const delay = (ms = 400) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export const createId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;

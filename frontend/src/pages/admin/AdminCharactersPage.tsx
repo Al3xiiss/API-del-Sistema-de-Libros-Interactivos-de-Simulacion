@@ -1,4 +1,4 @@
-/** Gestión de personajes (RF-07). Figma: "Gestión de personajes - Móvil". */
+/** Gestión de personajes (RF-10 a RF-12). Figma: "Gestión de personajes - Móvil". */
 import {
   IonButton, IonCol, IonContent, IonFooter, IonGrid, IonIcon, IonPage, IonRow, IonSkeletonText, IonToolbar,
   useIonAlert, useIonToast,
@@ -41,9 +41,13 @@ const AdminCharactersPage: React.FC = () => {
           text: 'Eliminar',
           role: 'destructive',
           handler: async () => {
-            await deleteCharacter(character.id);
-            presentToast({ message: 'Personaje eliminado.', duration: 2000, position: 'top' });
-            load();
+            try {
+              await deleteCharacter(character.id);
+              presentToast({ message: 'Personaje eliminado.', duration: 2000, position: 'top' });
+              load();
+            } catch (err) {
+              presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
+            }
           },
         },
       ],

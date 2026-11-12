@@ -1,5 +1,5 @@
 /**
- * Recursos multimedia (RF-05). Figma: "Multimedia - Móvil".
+ * Recursos multimedia (RF-07). Figma: "Multimedia - Móvil".
  * - /resources: todos los recursos (pestaña "Recursos").
  * - /chapters/:id/resources: solo los del capítulo, con botón para volver a la lectura.
  */
@@ -54,7 +54,9 @@ const ResourcesPage: React.FC = () => {
               <MediaPlayer resource={current} />
               <h1 className="page-title">{current.title}</h1>
               <p>{current.description}</p>
-              <IonNote className="small-note">Vista previa: el archivo real se cargará desde la API en la EP2.</IonNote>
+              {!current.url && (
+                <IonNote className="small-note">Vista previa: este recurso todavía no tiene un archivo cargado.</IonNote>
+              )}
               {chapterId && (
                 <IonButton expand="block" onClick={backToChapter}>Continuar capítulo</IonButton>
               )}

@@ -1,0 +1,12 @@
+# Dependencias: se instalan dentro de la imagen con npm ci
+node_modules
+
+# Secretos: las variables se entregan al iniciar el contenedor, nunca dentro de la imagen
+.env
+
+# Archivos que la API no necesita para funcionar
+docs
+database
+*.log
+Dockerfile
+.dockerignore

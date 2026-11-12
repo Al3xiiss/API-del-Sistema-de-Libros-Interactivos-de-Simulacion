@@ -3,7 +3,7 @@
 # Presentado por:
 - Alexis Eduardo Escobar Figueroa — Frontend / Ionic + React
 - Geraldine Valentina Allende López — UI/UX y Figma / Documentación
-- Gabriel Alejandro Fuentes Sagardia — Frontend / Figma / Documentación y gestión
+- Gabriel Alejandro Fuentes Sagardia — Backend / Docker / Figma / Documentación y gestión
 - Backend / API REST (EP2) — Responsabilidad compartida por todo el equipo
 
 **Distribución de responsabilidades**
@@ -11,6 +11,8 @@
 - **UI/UX y Figma:** mockups móvil/web, prototipo navegable, paleta y estilos de la aplicación (`theme/`, `components/`).
 - **Backend (EP2):** API REST con Node.js + Express, base de datos PostgreSQL, autenticación JWT con roles y seguridad (`backend/`).
 - **Integración (EP2):** conexión del frontend con la API mediante Axios e interceptores (`frontend/src/services/`).
+- **Seguridad de la API (EF):** correcciones de la EP2: restricciones `CHECK` en la base de datos, desbloqueo progresivo de capítulos validado en la API (409), rol vigente en cada petición, límite de intentos de inicio de sesión (429) y `JWT_SECRET` de al menos 32 caracteres (`backend/src/`).
+- **Despliegue con Docker (EF):** Dockerfiles del backend y del frontend, nginx como servidor y proxy de la API, y `docker-compose.yml` para levantar base de datos, API y frontend.
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
 
 ## Índice
@@ -1154,7 +1156,9 @@ Las demás variables de la API (`DB_HOST=db`, `CORS_ORIGIN`, `TRUST_PROXY`, etc.
 
 ```bash
 # 1. Variables de entorno (una sola vez). En PowerShell: Copy-Item .env.example .env
+
 cp .env.example .env
+
 # Editar .env y completar DB_PASSWORD y JWT_SECRET
 
 # 2. Construir las imágenes y levantar los tres servicios
@@ -1253,7 +1257,7 @@ Conforme a lo permitido por la pauta, el equipo utilizó asistentes de inteligen
 - **EP1:** para revisar la documentación frente a la rúbrica y generar una base inicial del código del frontend.
 - **EP2:** para guiar paso a paso la construcción del backend (servidor, base de datos, autenticación y CRUD) y generar una base del código de los módulos, de la integración con Axios, de la colección de Insomnia y de la documentación de la API.
 
--- **EF:** para guiar paso a paso las correcciones de seguridad de la API y la configuración de Docker (Dockerfiles, nginx y docker-compose), que el equipo creó, ejecutó y probó en sus equipos.
+- **EF:** para guiar paso a paso las correcciones de seguridad de la API y la configuración de Docker (Dockerfiles, nginx y docker-compose), que el equipo creó, ejecutó y probó en sus equipos.
 
 El código fue revisado, adaptado, probado y modificado por el equipo, que también ejecutó las pruebas en Insomnia y en el navegador. Los bocetos y prototipos de Figma se construyeron manualmente.
 

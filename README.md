@@ -16,6 +16,8 @@
 - **Frontend (EF):** pantallas de administración de capítulos, simulaciones (con sus opciones) y recursos, y pruebas de los interceptores de Axios con Vitest (frontend/src/services/api.test.ts).
 - **Servicio externo (EF5):** integración con la YouTube Data API para verificar los videos y obtener su duración, y botón *Completar con YouTube* en el formulario de recursos.
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
+- **Notificaciones y almacenamiento local (EF1):** recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión de los capítulos ya abiertos (`frontend/src/services/offlineCache.ts` y `reminderService.ts`).
+
 
 ## Índice
 1. [Descripción general del sistema](#descripción-general-del-sistema)
@@ -41,6 +43,7 @@
     - [Autenticación y roles](#autenticación-y-roles)
     - [Seguridad de la API](#seguridad-de-la-api)
     - [Integración con el frontend](#integración-con-el-frontend)
+    - [Notificaciones y almacenamiento local (EF1)](#notificaciones-y-almacenamiento-local-ef1)
     - [Servicio externo: YouTube Data API (EF5)](#servicio-externo-youtube-data-api-ef5)
     - [Pruebas con Insomnia](#pruebas-con-insomnia)
 8. [Librerías y Tecnologías](#librerías-usadas-con-react-ionic)
@@ -376,7 +379,6 @@ La aplicación considera rutas públicas, una ruta común y rutas protegidas. La
 | `/app/resources` | Recursos | Todos los recursos multimedia de apoyo. |
 | `/app/progress` | Mi progreso | Seguimiento de progreso y estadísticas propias. |
 | `/app/profile` | Perfil | Datos de la cuenta y cierre de sesión. |
-| `/app/characters` | Personajes | Galería de personajes (planificada; la API ya ofrece `GET /api/personajes`). |
 
 #### Rutas protegidas del Administrador
 
@@ -397,7 +399,8 @@ La aplicación considera rutas públicas, una ruta común y rutas protegidas. La
 | /admin/resources | Gestión de recursos | Videos y audios de apoyo con acciones editar y eliminar. |
 | /admin/resources/create | Crear recurso | Creación de un recurso asociado a un capítulo. |
 | /admin/resources/:id/edit | Editar recurso | Edición de un recurso existente. |
-| `/admin/progress` | Estadísticas | Planificada. La API ya ofrece `GET /api/estadisticas/pacientes`. |
+
+**Fuera del alcance de la Entrega Final (trabajo futuro):** una galería de personajes para el paciente (`/app/characters`) y una pantalla de avance por paciente para el administrador (`/admin/progress`). No corresponden a ningún requerimiento funcional, ya que el paciente conoce a cada personaje en su simulación (RF-05), y el administrador ve el uso general de la plataforma en su panel (RF-09). La API ya ofrece `GET /api/personajes` y `GET /api/estadisticas/pacientes`, así que se podrían agregar más adelante sin cambiar el backend.
 
 ### 2. Relaciones jerárquicas entre vistas
 La aplicación se organiza mediante una estructura jerárquica en la que las funcionalidades disponibles dependen del rol del usuario autenticado.
@@ -957,6 +960,39 @@ El código está en `backend/src/services/youtube.service.js`, `backend/src/rout
 
 ![GET /api/youtube/video responde 200 con los datos del video](img/ef5/youtube-insomnia.png)
 
+### Notificaciones y almacenamiento local (EF1)
+
+El paciente suele leer en el hospital o durante su tratamiento, donde el wifi se corta y puede pasar días sin abrir la aplicación. Por eso se agregaron avisos y una copia local de la lectura.
+
+**Notificaciones**
+
+| Aviso | Cuándo aparece | Cómo funciona |
+| :--- | :--- | :--- |
+| Recordatorio de lectura | Todos los días, a la hora que el paciente elige en **Perfil** | Notificación del sistema (*¿Seguimos con la historia?*) con la API de notificaciones del navegador [[26]](#referencias). El permiso se pide solo al activarlo, si el paciente lo niega, la app explica cómo permitirlo. |
+| Capítulo desbloqueado | Al terminar un capítulo o confirmar una decisión | Aviso en pantalla, por ejemplo *Desbloqueaste el capítulo 4: Pedro, el guardián*. No aparece al releer un capítulo ya completado. |
+| Sin conexión | Cuando se pierde internet o la API no responde | Aviso bajo el encabezado: *Sin conexión. Puedes seguir leyendo los capítulos que ya abriste.* Desaparece cuando vuelve la conexión [[27]](#referencias). |
+
+**Almacenamiento local**
+
+- Cada respuesta de la API con libros, capítulos, simulaciones, personajes y progreso se guarda en `localStorage` [[28]](#referencias) (`frontend/src/services/offlineCache.ts`). Si la API no responde por falta de red, la pantalla usa la última copia guardada.
+- La copia se usa **solo sin conexión**: los errores de la API (403, 404, 409) se muestran igual que antes.
+- Si algo nunca se abrió con conexión, se muestra *Sin conexión: todavía no está guardado en tu dispositivo*, en vez de una pantalla que carga sin fin. Los videos y audios no se guardan, porque necesitan internet.
+- **Privacidad:** la copia es de cada usuario y se borra al cerrar sesión, porque el dispositivo puede ser compartido (por ejemplo, una tablet del hospital). Solo se mantiene la preferencia del recordatorio.
+- Sin conexión no se guardan decisiones ni avance: la app muestra el mensaje de error y el paciente puede intentarlo cuando vuelva internet.
+
+**Cómo probarlo**
+
+1. Como paciente, abrir un capítulo. En DevTools (F12) y **Network**, cambiar *No throttling* por **Offline**. Volver al libro y abrir el mismo capítulo: se lee desde la copia. Abrir un libro que no se haya abierto: aparece *todavía no está guardado*.
+2. En **Perfil**, activar *Recordarme leer cada día*, permitir las notificaciones y tocar **Probar notificación**. Para probar la hora, elegir un minuto después de la hora actual y esperar.
+
+**Limitaciones (trabajo futuro):** no hay *service worker*, así que la aplicación debe haberse abierto con conexión (recargar la página sin internet no funciona). El recordatorio llega mientras la aplicación esté abierta en el navegador, aunque sea en otra pestaña o minimizada. Con Capacitor y su plugin Local Notifications [[29]](#referencias), el aviso llegaría también con la aplicación cerrada.
+
+**Pruebas:** `services/offlineCache.test.ts` (7 pruebas) y `services/reminderService.test.ts` (9 pruebas) con Vitest. Se ejecutan con `npm run test.unit -- --run` dentro de `frontend/`.
+
+![Capítulo leído sin conexión, libro que todavía no está guardado, aviso de capítulo desbloqueado y recordatorio de lectura en Perfil](img/ef1/ef1-pantallas.png)
+
+![Pruebas de Vitest: 25 de 25](img/ef1/vitest-ef1.png)
+
 ### Pruebas con Insomnia
 
 La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **91 peticiones** en 13 carpetas, con los casos correctos y los de error de cada módulo, y **107 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
@@ -1305,11 +1341,13 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
         │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,       AdminResources, AdminResourceForm
         │   └── common/          Unauthorized, NotFound
         ├── components/          AppMenu, PageHeader, BookCard, ChapterListItem, DecisionOptionCard,
-        │                        MediaPlayer, AdminItemCard, EmptyState
+        │                        MediaPlayer, AdminItemCard, EmptyState, OfflineBanner, OfflineState
         ├── context/             AuthContext (usuario y rol en sesión)
-        ├── services/            api (Axios e interceptores), session, mappers, authService, bookService,
-        │                        characterService, adminContentService, progressService, statsService, storage
-        ├── hooks/               usePageEnter (recarga datos al volver a una página)
+        ├── services/            api (Axios e interceptores), session, mappers,authService, bookService,
+        │                        characterService, adminContentService, progressService, statsService, storage,
+        │                        offlineCache (lectura sin conexión), reminderService (recordatorio de lectura)
+        ├── hooks/               usePageEnter (recarga datos al volver a una página), useOnlineStatus,
+        │                        useReadingReminder
         ├── types/               Tipos del dominio
         ├── utils/               Validaciones de formularios
         └── theme/               Paleta (variables.css) y estilos globales (global.css)
@@ -1353,3 +1391,7 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 23. OWASP. *Authentication Cheat Sheet* (protección contra ataques automatizados). https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
 24. Google for Developers. *YouTube Data API: Videos: list*. https://developers.google.com/youtube/v3/docs/videos/list
 25. Google for Developers. *YouTube Data API: Getting Started* (cuota de uso). https://developers.google.com/youtube/v3/getting-started
+26. MDN Web Docs. *Notifications API*. https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API
+27. MDN Web Docs. *Navigator: onLine property*. https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
+28. MDN Web Docs. *Window: localStorage property*. https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+29. Capacitor. *Local Notifications Capacitor Plugin API*. https://capacitorjs.com/docs/apis/local-notifications

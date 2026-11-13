@@ -1266,7 +1266,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
         │   ├── public/          LoginPage, RegisterPage
         │   ├── user/            Home, BookDetail, Chapter, Simulation, Decision, Resources, Progress, Profile
         │   ├── admin/           AdminHome, AdminBooks, AdminBookForm, AdminCharacters, AdminCharacterForm,
-        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,       AdminResources, AdminResourceForm
+        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,       AdminResources, AdminResourceForm 
         │   └── common/          Unauthorized, NotFound
         ├── components/          AppMenu, PageHeader, BookCard, ChapterListItem, DecisionOptionCard,
         │                        MediaPlayer, AdminItemCard, EmptyState

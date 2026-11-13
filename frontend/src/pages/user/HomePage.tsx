@@ -7,9 +7,11 @@ import { libraryOutline, searchOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import BookCard from '../../components/BookCard';
 import EmptyState from '../../components/EmptyState';
+import OfflineState from '../../components/OfflineState';
 import PageHeader from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import { getAllChapters, getBooks } from '../../services/bookService';
+import { isOfflineError } from '../../services/offlineCache';
 import { bookPercent, getProgress } from '../../services/progressService';
 import { Book, Chapter, ProgressStore } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
@@ -25,17 +27,23 @@ const HomePage: React.FC = () => {
   const [library, setLibrary] = useState<LibraryItem[] | null>(null);
   const [progress, setProgress] = useState<ProgressStore>({});
   const [query, setQuery] = useState('');
+  const [offline, setOffline] = useState(false); // sin conexión y sin copia guardada (EF1)
 
   // Se recarga cada vez que la vista entra, para reflejar el avance reciente.
-  usePageEnter(() => {
+  const load = () => {
+    setOffline(false);
     Promise.all([getBooks(), getAllChapters(), getProgress()]).then(([books, allChapters, store]) => {
       setProgress(store);
       setLibrary(books.map((book) => {
         const chapters = allChapters.filter((c) => c.bookId === book.id);
         return { book, chapters, percent: bookPercent(chapters.length, store[book.id]) };
       }));
+    }).catch((err) => {
+      if (!isOfflineError(err)) throw err;
+      setOffline(true);
     });
-  });
+  };
+  usePageEnter(load);
 
   // Último libro leído: el progreso actualizado más recientemente.
   const lastRead = library
@@ -53,7 +61,11 @@ const HomePage: React.FC = () => {
           <h1 className="page-title">Hola, {user?.alias}</h1>
 
           {/* "Continúa donde lo dejaste" o estado vacío del primer acceso */}
-          {library === null ? (
+          {library === null && offline ? (
+            <OfflineState message="Tu biblioteca todavía no está guardada en este dispositivo. Conéctate a internet para cargarla.">
+              <IonButton onClick={load}>Reintentar</IonButton>
+            </OfflineState>
+          ) : library === null ? (
             <IonSkeletonText animated className="skeleton-hero" />
           ) : lastRead && lastChapter ? (
             <IonCard className="continue-card">
@@ -85,7 +97,7 @@ const HomePage: React.FC = () => {
 
           <IonGrid className="ion-no-padding">
             <IonRow>
-              {library === null &&
+              {library === null && !offline &&
                 [1, 2, 3].map((n) => (
                   <IonCol size="12" sizeMd="6" sizeXl="4" key={n}>
                     <IonSkeletonText animated className="skeleton-card" />

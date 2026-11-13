@@ -7,8 +7,10 @@ import { imageOutline, lockClosedOutline, playCircleOutline } from 'ionicons/ico
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EmptyState from '../../components/EmptyState';
+import OfflineState from '../../components/OfflineState';
 import PageHeader from '../../components/PageHeader';
 import { getChapter, getChapters } from '../../services/bookService';
+import { isOfflineError } from '../../services/offlineCache';
 import { chapterStatus, completeChapter, getProgress, markChapterOpened } from '../../services/progressService';
 import { Chapter } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
@@ -20,8 +22,13 @@ const ChapterPage: React.FC = () => {
   const [chapter, setChapter] = useState<Chapter | null | undefined>(undefined);
   const [siblings, setSiblings] = useState<Chapter[]>([]);
   const [locked, setLocked] = useState(false);
+  // Si ya estaba completado, "Siguiente" no desbloquea nada nuevo
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
+  // Sin conexión y sin copia guardada de este capítulo (EF1)
+  const [unavailableOffline, setUnavailableOffline] = useState(false);
 
   usePageEnter(() => {
+    setUnavailableOffline(false);
     Promise.all([getChapter(id!), getProgress()]).then(async ([found, store]) => {
       if (!found) return setChapter(null);
       const bookChapters = await getChapters(found.bookId);
@@ -29,10 +36,19 @@ const ChapterPage: React.FC = () => {
       const status = chapterStatus(bookChapters, index, store[found.bookId]);
       setSiblings(bookChapters);
       setLocked(status === 'locked');
+      setAlreadyCompleted(status === 'completed');
       setChapter(found);
       // Guarda el último capítulo abierto para "Continúa donde lo dejaste".
       // Si falla, solo se pierde el "Continúa donde lo dejaste"; la lectura sigue.
       if (status !== 'locked') markChapterOpened(found.id).catch(() => undefined);
+    }).catch((err) => {
+      // Sin conexión y sin copia de este capítulo en el dispositivo
+      if (isOfflineError(err)) {
+        setChapter(undefined);
+        setUnavailableOffline(true);
+      } else {
+        throw err;
+      }
     });
   });
 
@@ -48,6 +64,10 @@ const ChapterPage: React.FC = () => {
     const next = siblings.find((c) => c.number === chapter.number + 1);
     if (next) {
       router.push(`/app/chapters/${next.id}`);
+      // Aviso de capítulo desbloqueado (EF1)
+      if (!alreadyCompleted) {
+        presentToast({ message: `Desbloqueaste el capítulo ${next.number}: ${next.title}`, duration: 2500, color: 'success', position: 'top' });
+      }
     } else {
       presentToast({ message: '¡Terminaste el libro!', duration: 2500, color: 'success', position: 'top' });
       router.push(`/app/books/${chapter.bookId}`, 'back');
@@ -63,7 +83,11 @@ const ChapterPage: React.FC = () => {
 
       <IonContent className="ion-padding">
         <article className="reading">
-          {chapter === undefined && <IonSkeletonText animated className="skeleton-hero" />}
+          {chapter === undefined && !unavailableOffline && <IonSkeletonText animated className="skeleton-hero" />}
+
+          {chapter === undefined && unavailableOffline && (
+            <OfflineState message="Este capítulo todavía no está guardado en tu dispositivo. Ábrelo cuando tengas internet y quedará disponible sin conexión." />
+          )}
 
           {chapter === null && (
             <EmptyState icon={lockClosedOutline} title="Capítulo no encontrado" message="Vuelve al libro para elegir otro capítulo.">

@@ -11,9 +11,11 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import DecisionOptionCard from '../../components/DecisionOptionCard';
 import EmptyState from '../../components/EmptyState';
+import OfflineState from '../../components/OfflineState';
 import PageHeader from '../../components/PageHeader';
 import { getChapter, getChapters, getSimulation, getSimulations } from '../../services/bookService';
 import { getCharacter } from '../../services/characterService';
+import { isOfflineError } from '../../services/offlineCache';
 import { completeChapter, getProgress, saveDecision } from '../../services/progressService';
 import { Chapter, Character, Simulation } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
@@ -30,12 +32,15 @@ const DecisionPage: React.FC = () => {
   const [character, setCharacter] = useState<Character>();
   const [selected, setSelected] = useState<string>();
   const [confirmed, setConfirmed] = useState(false);
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [offline, setOffline] = useState(false); // sin conexión y sin copia guardada (EF1)
   const [counter, setCounter] = useState({ current: 0, total: 0 });
 
   usePageEnter(() => {
     setSelected(undefined);
     setConfirmed(false);
+    setOffline(false);
     getSimulation(id!).then(async (sim) => {
       if (!sim) return setSimulation(null);
       const [current, person, store] = await Promise.all([
@@ -46,6 +51,7 @@ const DecisionPage: React.FC = () => {
       const [chapters, bookSims] = await Promise.all([getChapters(bookId), getSimulations(bookId)]);
       setChapter(current);
       setNextChapter(chapters.find((c) => c.number === current.number + 1));
+      setAlreadyCompleted(store[bookId]?.completedChapterIds.includes(current.id) ?? false);
       setCharacter(person);
       setCounter({ current: bookSims.findIndex((s) => s.id === sim.id) + 1, total: bookSims.length });
       // Si ya decidió antes, se muestra su elección anterior.
@@ -55,6 +61,10 @@ const DecisionPage: React.FC = () => {
         setConfirmed(true);
       }
       setSimulation(sim);
+    }).catch((err) => {
+      if (!isOfflineError(err)) throw err;
+      setSimulation(undefined);
+      setOffline(true);
     });
   });
 
@@ -65,6 +75,10 @@ const DecisionPage: React.FC = () => {
       await saveDecision(simulation.id, selected);
       await completeChapter(chapter.id);
       setConfirmed(true);
+      // Aviso de capítulo desbloqueado (EF1)
+      if (nextChapter && !alreadyCompleted) {
+        presentToast({ message: `Desbloqueaste el capítulo ${nextChapter.number}: ${nextChapter.title}`, duration: 2500, color: 'success', position: 'top' });
+      }
     } catch (err) {
       presentToast({ message: (err as Error).message, duration: 3000, color: 'danger', position: 'top' });
     } finally {
@@ -79,7 +93,10 @@ const DecisionPage: React.FC = () => {
       <PageHeader title="Simulación" backHref={`/app/simulation/${id}`} />
       <IonContent className="ion-padding">
         <div className="reading">
-          {simulation === undefined && <IonSkeletonText animated className="skeleton-hero" />}
+          {simulation === undefined && !offline && <IonSkeletonText animated className="skeleton-hero" />}
+          {simulation === undefined && offline && (
+            <OfflineState message="Esta simulación todavía no está guardada en tu dispositivo. Ábrela cuando tengas internet y quedará disponible sin conexión." />
+          )}
           {simulation === null && (
             <EmptyState icon={alertCircleOutline} title="Decisión no disponible" message="Vuelve al capítulo e inténtalo de nuevo." />
           )}

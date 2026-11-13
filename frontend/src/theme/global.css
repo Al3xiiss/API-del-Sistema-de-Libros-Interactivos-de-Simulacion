@@ -408,3 +408,24 @@ ion-menu ion-list {
 .youtube-preview p {
   margin: 2px 0 0;
 }
+
+/* ---------- Aviso sin conexión (EF1: almacenamiento local) ---------- */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 8px 16px;
+  background: var(--ion-color-dark);
+  color: var(--ion-color-dark-contrast);
+  font-size: 0.875rem;
+  line-height: 1.3;
+  text-align: left;
+}
+.offline-banner ion-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+.reminder-note {
+  margin: 0 var(--space-2) var(--space-2);
+}

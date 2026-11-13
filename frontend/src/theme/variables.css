@@ -53,6 +53,8 @@
   --ion-background-color-rgb: 250, 248, 253;
   --ion-text-color: #1f1b2d;
   --ion-text-color-rgb: 31, 27, 45;
+  /* Variable personalizada de nuestra app */
+  --app-text-secondary: #5f5a6b;
   --ion-toolbar-background: #ffffff;
   --ion-tab-bar-background: #ffffff;
   --ion-item-background: #ffffff;

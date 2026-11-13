@@ -13,6 +13,7 @@
 - **Integración (EP2):** conexión del frontend con la API mediante Axios e interceptores (`frontend/src/services/`).
 - **Seguridad de la API (EF):** correcciones de la EP2: restricciones `CHECK` en la base de datos, desbloqueo progresivo de capítulos validado en la API (409), rol vigente en cada petición, límite de intentos de inicio de sesión (429) y `JWT_SECRET` de al menos 32 caracteres (`backend/src/`).
 - **Despliegue con Docker (EF):** Dockerfiles del backend y del frontend, nginx como servidor y proxy de la API, y `docker-compose.yml` para levantar base de datos, API y frontend.
+- **Frontend (EF):** pantallas de administración de capítulos, simulaciones (con sus opciones) y recursos, y pruebas de los interceptores de Axios con Vitest (frontend/src/services/api.test.ts).
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
 
 ## Índice
@@ -427,9 +428,18 @@ IonApp
                     ├── /admin/books
                     │   ├── /admin/books/create
                     │   └── /admin/books/:id/edit
-                    └── /admin/characters
-                        ├── /admin/characters/create
-                        └── /admin/characters/:id/edit
+                    ├── /admin/chapters
+                    │   ├── /admin/chapters/create
+                    │   └── /admin/chapters/:id/edit
+                    ├── /admin/characters
+                    │   ├── /admin/characters/create
+                    │   └── /admin/characters/:id/edit
+                    ├── /admin/simulations
+                    │   ├── /admin/simulations/create
+                    │   └── /admin/simulations/:id/edit
+                    └── /admin/resources
+                        ├── /admin/resources/create
+                        └── /admin/resources/:id/edit
 ```
 
 La aplicación utiliza un enfoque de componentes contenedores (Layouts) para encapsular la navegación.

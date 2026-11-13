@@ -13,6 +13,7 @@
 - **Integración (EP2):** conexión del frontend con la API mediante Axios e interceptores (`frontend/src/services/`).
 - **Seguridad de la API (EF):** correcciones de la EP2: restricciones `CHECK` en la base de datos, desbloqueo progresivo de capítulos validado en la API (409), rol vigente en cada petición, límite de intentos de inicio de sesión (429) y `JWT_SECRET` de al menos 32 caracteres (`backend/src/`).
 - **Despliegue con Docker (EF):** Dockerfiles del backend y del frontend, nginx como servidor y proxy de la API, y `docker-compose.yml` para levantar base de datos, API y frontend.
+- **Frontend (EF):** pantallas de administración de capítulos, simulaciones (con sus opciones) y recursos, y pruebas de los interceptores de Axios con Vitest (frontend/src/services/api.test.ts).
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
 
 ## Índice
@@ -386,9 +387,14 @@ La aplicación considera rutas públicas, una ruta común y rutas protegidas. La
 | `/admin/characters` | Gestión de personajes | Listado de personajes con acciones editar y eliminar. |
 | `/admin/characters/create` | Crear personaje | Creación de un personaje y asociación a un capítulo. |
 | `/admin/characters/:id/edit` | Editar personaje | Edición de un personaje existente. |
-| `/admin/chapters` | Gestión de capítulos | Planificada. La API ya ofrece el CRUD en `/api/capitulos`. |
-| `/admin/simulations` | Gestión de simulaciones | Planificada. La API ya ofrece el CRUD en `/api/simulaciones`. |
-| `/admin/resources` | Gestión de recursos | Planificada. La API ya ofrece el CRUD en `/api/recursos`. |
+| `/admin/chapters` | Gestión de capítulos | Capítulos del libro elegido con acciones editar y eliminar. |
+| /admin/chapters/create | Crear capítulo | Creación de un capítulo; si no se indica el número, se usa el siguiente. |
+| /admin/chapters/:id/edit | Editar capítulo | Edición de un capítulo existente. |
+| /admin/simulations/create | Crear simulación | Creación de una simulación con 2 a 4 opciones de decisión. |
+| /admin/simulations/:id/edit | Editar simulación | Edición de la simulación y de sus opciones. |
+| /admin/resources | Gestión de recursos | Videos y audios de apoyo con acciones editar y eliminar. |
+| /admin/resources/create | Crear recurso | Creación de un recurso asociado a un capítulo. |
+| /admin/resources/:id/edit | Editar recurso | Edición de un recurso existente. |
 | `/admin/progress` | Estadísticas | Planificada. La API ya ofrece `GET /api/estadisticas/pacientes`. |
 
 ### 2. Relaciones jerárquicas entre vistas
@@ -427,9 +433,18 @@ IonApp
                     ├── /admin/books
                     │   ├── /admin/books/create
                     │   └── /admin/books/:id/edit
-                    └── /admin/characters
-                        ├── /admin/characters/create
-                        └── /admin/characters/:id/edit
+                    ├── /admin/chapters
+                    │   ├── /admin/chapters/create
+                    │   └── /admin/chapters/:id/edit
+                    ├── /admin/characters
+                    │   ├── /admin/characters/create
+                    │   └── /admin/characters/:id/edit
+                    ├── /admin/simulations
+                    │   ├── /admin/simulations/create
+                    │   └── /admin/simulations/:id/edit
+                    └── /admin/resources
+                        ├── /admin/resources/create
+                        └── /admin/resources/:id/edit
 ```
 
 La aplicación utiliza un enfoque de componentes contenedores (Layouts) para encapsular la navegación.
@@ -464,6 +479,12 @@ flowchart TD
     AB --> ABF["/admin/books/create<br/>/admin/books/:id/edit"]
     AD --> AC["/admin/characters"]
     AC --> ACF["/admin/characters/create<br/>/admin/characters/:id/edit"]
+    AD --> ACH["/admin/chapters"]
+    ACH --> ACHF["/admin/chapters/create<br/>/admin/chapters/:id/edit"]
+    AD --> AS["/admin/simulations"]
+    AS --> ASF["/admin/simulations/create<br/>/admin/simulations/:id/edit"]
+    AD --> AR["/admin/resources"]
+    AR --> ARF["/admin/resources/create<br/>/admin/resources/:id/edit"]
     X["Paciente intenta entrar a /admin"] --> U["/unauthorized"]
 ```
 
@@ -894,6 +915,9 @@ sequenceDiagram
 | Panel de administración | `GET /estadisticas` |
 | Gestión de libros | `GET`, `POST`, `PUT` y `DELETE` en `/libros` |
 | Gestión de personajes | `GET`, `POST`, `PUT` y `DELETE` en `/personajes` · `GET /capitulos` |
+| Gestión de capítulos | GET /libros · GET, POST, PUT y DELETE en /capitulos |
+| Gestión de simulaciones | GET /libros · GET /capitulos · GET /personajes · GET, POST, PUT y DELETE en /simulaciones y en /simulaciones/:id/opciones |
+| Gestión de recursos | GET /libros · GET /capitulos · GET, POST, PUT y DELETE en /recursos |
 
 **Evidencia de integración:** peticiones del frontend a la API con el token JWT (DevTools → Network) y una decisión tomada en la aplicación guardada en PostgreSQL.
 
@@ -927,7 +951,11 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 
 ![Un paciente intenta crear un libro y la API responde 403](backend/docs/evidencias/insomnia-403.png)
 
-El frontend también tiene pruebas automáticas: una prueba unitaria con Vitest y pruebas end-to-end de rutas y roles con Cypress (`npm run test.e2e`, con el backend y el frontend corriendo).
+El frontend también tiene pruebas automáticas con Vitest (npm run test.unit -- --run dentro de frontend, 9 pruebas). frontend/src/services/api.test.ts revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
+
+![Pruebas de los interceptores con Vitest: 9 de 9](img/ef/vitest-interceptor.png)
+![Gestión de simulaciones en el panel de administración](img/ef/admin-simulaciones.png)
+![Formulario de una simulación con sus opciones de decisión](img/ef/admin-simulaciones-form.png)
 
 ---
 ## Librerías usadas con React (Ionic)
@@ -1237,13 +1265,14 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
         ├── pages/
         │   ├── public/          LoginPage, RegisterPage
         │   ├── user/            Home, BookDetail, Chapter, Simulation, Decision, Resources, Progress, Profile
-        │   ├── admin/           AdminHome, AdminBooks, AdminBookForm, AdminCharacters, AdminCharacterForm
+        │   ├── admin/           AdminHome, AdminBooks, AdminBookForm, AdminCharacters, AdminCharacterForm,
+        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,       AdminResources, AdminResourceForm
         │   └── common/          Unauthorized, NotFound
         ├── components/          AppMenu, PageHeader, BookCard, ChapterListItem, DecisionOptionCard,
         │                        MediaPlayer, AdminItemCard, EmptyState
         ├── context/             AuthContext (usuario y rol en sesión)
         ├── services/            api (Axios e interceptores), session, mappers, authService, bookService,
-        │                        characterService, progressService, statsService, storage
+        │                        characterService, adminContentService, progressService, statsService, storage
         ├── hooks/               usePageEnter (recarga datos al volver a una página)
         ├── types/               Tipos del dominio
         ├── utils/               Validaciones de formularios

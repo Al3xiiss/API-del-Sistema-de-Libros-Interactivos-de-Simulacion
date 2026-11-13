@@ -69,7 +69,10 @@ const BookDetailPage: React.FC = () => {
                   </div>
                   <h1 className="page-title">{book.title}</h1>
                   <p>{book.synopsis}</p>
-                  <IonProgressBar value={bookPercent(chapters.length, progress)} />
+                  <IonProgressBar
+  value={bookPercent(chapters.length, progress)}
+  aria-label={`Avance ${Math.round(bookPercent(chapters.length, progress) * 100)}%`}
+/>
                   <p className="small-note">
                     {progress?.completedChapterIds.length ?? 0} de {chapters.length} capítulos completados
                   </p>

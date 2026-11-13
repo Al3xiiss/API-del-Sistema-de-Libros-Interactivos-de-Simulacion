@@ -73,7 +73,10 @@ const HomePage: React.FC = () => {
                 <p className="eyebrow">Continúa donde lo dejaste</p>
                 <h2>{lastRead.book.title}</h2>
                 <p>Capítulo {lastChapter.number} de {lastRead.chapters.length}: {lastChapter.title}</p>
-                <IonProgressBar value={lastRead.percent} />
+                <IonProgressBar
+  value={lastRead.percent}
+  aria-label={`Avance ${Math.round(lastRead.percent * 100)}%`}
+/>
                 <IonButton expand="block" routerLink={`/app/chapters/${lastChapter.id}`}>
                   Continuar leyendo
                 </IonButton>

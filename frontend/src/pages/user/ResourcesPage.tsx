@@ -88,7 +88,7 @@ const ResourcesPage: React.FC = () => {
                 >
                   <IonIcon aria-hidden="true" slot="start" icon={resource.type === 'video' ? videocamOutline : headsetOutline} />
                   <IonLabel>
-                    <h3>{resource.title}</h3>
+                    <h2>{resource.title}</h2>
                     <p>{resource.type === 'video' ? 'Video' : 'Audio'} · {Math.ceil(resource.durationSeconds / 60)} min</p>
                   </IonLabel>
                 </IonItem>

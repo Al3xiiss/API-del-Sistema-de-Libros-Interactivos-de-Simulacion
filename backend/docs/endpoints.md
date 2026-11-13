@@ -21,6 +21,7 @@ API del **Sistema de Libros Interactivos de Simulación** (EP2). Está construid
    - [Progreso del paciente](#progreso-del-paciente)
    - [Decisiones del paciente](#decisiones-del-paciente)
    - [Estadísticas](#estadísticas)
+   - [YouTube (servicio externo)](#youtube-servicio-externo)
 4. [Seguridad](#seguridad)
 5. [Pruebas con Insomnia](#pruebas-con-insomnia)
 
@@ -68,6 +69,7 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
 | `409 Conflict` | Valor repetido (por ejemplo, un correo ya registrado) o una acción que no corresponde al estado actual, como completar un capítulo cuando el anterior está pendiente |
 | `429 Too Many Requests` | Demasiados intentos fallidos de inicio de sesión: 5 en 15 minutos para el mismo correo desde la misma IP |
 | `500 Internal Server Error` | Error inesperado. Se registra en la terminal del servidor y al cliente solo le llega un mensaje genérico |
+| `503 Service Unavailable` | YouTube no responde, se agotó la cuota o falta `YOUTUBE_API_KEY` (solo al guardar recursos de YouTube y en `/youtube/video`) |
 
 ### Ids y filtros
 
@@ -100,6 +102,7 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
 | Libros, capítulos, personajes, simulaciones, recursos | Ver | Ver, crear, editar y eliminar |
 | Progreso y decisiones | Solo los propios | Solo los propios |
 | Estadísticas | — | Ver |
+| YouTube (datos de un video) | — | Ver |
 
 ---
 
@@ -347,8 +350,10 @@ Respuesta de `GET /simulaciones/1`:
 | `tipo` | Obligatorio. `video` o `audio` |
 | `titulo` | Obligatorio. De 3 a 100 caracteres |
 | `descripcion` | Opcional. Hasta 300 caracteres |
-| `url` | Opcional. Dirección `http://` o `https://`, hasta 500 caracteres |
+| `url` | Opcional, hasta 500 caracteres. Un video de YouTube (`youtube.com/watch?v=`, `youtu.be/`, `shorts/` o `embed/`), un archivo de `/media/` o la dirección `http(s)://` de un archivo `.mp3`, `.m4a`, `.ogg`, `.wav`, `.mp4` o `.webm`. Cualquier otra página responde `400` |
 | `duracion_segundos` | Opcional. Entero entre 1 y 86.400 |
+
+**Videos de YouTube:** si `YOUTUBE_API_KEY` está configurada, al crear o editar un recurso con un enlace de YouTube la API consulta el video en la YouTube Data API. Si no existe, es privado o no se puede insertar, responde `400` y no guarda nada; si existe, guarda su duración real en `duracion_segundos`. Si YouTube no responde, responde `503`.
 
 ### Progreso del paciente
 
@@ -444,6 +449,31 @@ Igual que el progreso, el usuario se obtiene del token.
 }
 ```
 
+### YouTube (servicio externo)
+
+| Método | Ruta | Acceso | Descripción |
+|---|---|---|---|
+| `GET` | `/youtube/video?url=` | Admin | Datos de un video de YouTube, consultados en la YouTube Data API v3. Lo usa el botón *Completar con YouTube* del formulario de recursos |
+
+```json
+{
+  "data": {
+    "id": "1NSM3mhgwv0",
+    "titulo": "Título del video en YouTube",
+    "canal": "Nombre del canal",
+    "miniatura": "https://i.ytimg.com/vi/1NSM3mhgwv0/mqdefault.jpg",
+    "duracion_segundos": 256
+  }
+}
+```
+
+| Respuesta | Cuándo |
+|---|---|
+| `400` | `url` no es un enlace de YouTube, o el video no existe, es privado o su dueño no permite insertarlo |
+| `503` | Falta `YOUTUBE_API_KEY`, YouTube no responde en 5 segundos, se agotó la cuota diaria o la clave no es válida (el detalle queda en la terminal) |
+
+Los videos consultados se guardan en caché durante 1 hora para no gastar cuota repetida. `duracion_segundos` es `null` en una transmisión en vivo.
+
 ---
 
 ## Seguridad
@@ -466,12 +496,13 @@ Igual que el progreso, el usuario se obtiene del token.
 | Las restricciones de la base de datos (UNIQUE, FOREIGN KEY, CHECK) se traducen a `400` o `409` | `utils/pgErrors.js` |
 | Transacciones en operaciones de varios pasos (crear simulación con opciones, reiniciar libro) | `utils/transaccion.js` |
 | Login con mensaje genérico, que no revela qué correos existen | `services/auth.service.js` |
+| La clave de YouTube está en `YOUTUBE_API_KEY` (`.env`), viaja en el encabezado `X-Goog-Api-Key` y solo el administrador puede usar `/youtube/video` | `services/youtube.service.js`, `routes/youtube.routes.js` |
 
 ---
 
 ## Pruebas con Insomnia
 
-La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **86 peticiones** en 12 carpetas, con **100 pruebas automáticas**: los casos correctos y los de error (400, 401, 403, 404, 409 y 429) de cada módulo. Cada petición incluye:
+La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **91 peticiones** en 13 carpetas, con **107 pruebas automáticas**: los casos correctos y los de error (400, 401, 403, 404, 409, 429 y 503) de cada módulo. Cada petición incluye:
 
 - Una descripción, en la pestaña **Docs**, con la respuesta esperada.
 - Pruebas automáticas.

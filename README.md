@@ -14,6 +14,7 @@
 - **Seguridad de la API (EF):** correcciones de la EP2: restricciones `CHECK` en la base de datos, desbloqueo progresivo de capítulos validado en la API (409), rol vigente en cada petición, límite de intentos de inicio de sesión (429) y `JWT_SECRET` de al menos 32 caracteres (`backend/src/`).
 - **Despliegue con Docker (EF):** Dockerfiles del backend y del frontend, nginx como servidor y proxy de la API, y `docker-compose.yml` para levantar base de datos, API y frontend.
 - **Frontend (EF):** pantallas de administración de capítulos, simulaciones (con sus opciones) y recursos, y pruebas de los interceptores de Axios con Vitest (frontend/src/services/api.test.ts).
+- **Servicio externo (EF5):** integración con la YouTube Data API para verificar los videos y obtener su duración, y botón *Completar con YouTube* en el formulario de recursos.
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
 
 ## Índice
@@ -40,6 +41,7 @@
     - [Autenticación y roles](#autenticación-y-roles)
     - [Seguridad de la API](#seguridad-de-la-api)
     - [Integración con el frontend](#integración-con-el-frontend)
+    - [Servicio externo: YouTube Data API (EF5)](#servicio-externo-youtube-data-api-ef5)
     - [Pruebas con Insomnia](#pruebas-con-insomnia)
 8. [Librerías y Tecnologías](#librerías-usadas-con-react-ionic)
 9. [Instalación y configuración](#instalación-y-configuración)
@@ -892,6 +894,7 @@ sequenceDiagram
 | Filtración de información | Los errores 500 no muestran detalles internos, el login usa un mensaje genérico y las estadísticas de pacientes muestran solo el alias. |
 | Cabeceras y orígenes | helmet agrega cabeceras HTTP de seguridad [[20]](#referencias), y CORS solo acepta peticiones del frontend (`CORS_ORIGIN`). |
 | Operaciones a medias | Se usan transacciones al crear una simulación con sus opciones y al reiniciar el progreso de un libro. |
+| Uso indebido de la clave de YouTube | Solo el administrador puede consultar `/api/youtube`. La clave está en `.env`, restringida a la YouTube Data API v3 en Google Cloud, y viaja en un encabezado, no en la URL. |
 | Secretos en el repositorio | `.env` está en `.gitignore`. Solo se sube `.env.example`, con valores de ejemplo. |
 
 ### Integración con el frontend
@@ -925,9 +928,38 @@ sequenceDiagram
 
 ![Decisión tomada en la aplicación guardada en la tabla decisiones](backend/docs/evidencias/pgadmin-decisiones.png)
 
+### Servicio externo: YouTube Data API (EF5)
+
+Casi todos los recursos multimedia de la aplicación son videos de YouTube. Para que el administrador no deje enlaces rotos ni tenga que escribir la duración a mano, la API se integra con la **YouTube Data API v3** de Google [[24]](#referencias).
+
+| Momento | Qué hace la API |
+| :--- | :--- |
+| Al crear o editar un recurso con un enlace de YouTube | Consulta el video. Si no existe, es privado o su dueño no permite reproducirlo fuera de YouTube, responde `400` y no guarda nada. Si existe, guarda su **duración real**. |
+| En el formulario de recursos, botón **Completar con YouTube** | `GET /api/youtube/video?url=...` (solo administrador) devuelve título, canal, miniatura y duración, y el formulario se completa solo. |
+| Siempre | Solo acepta enlaces que el reproductor de la app sabe usar: un video de YouTube o un archivo de audio o video (`.mp3`, `.m4a`, `.ogg`, `.wav`, `.mp4`, `.webm`). |
+
+**Cómo se maneja la integración:**
+- **Clave en variable de entorno:** `YOUTUBE_API_KEY` va en `backend/.env` (y en el `.env` de la raíz para Docker), nunca en el código. Se envía en el encabezado `X-Goog-Api-Key`, no en la URL, y en Google Cloud está restringida para usar solo la YouTube Data API v3.
+- **Errores:** si YouTube no responde en 5 segundos, se agotó la cuota o la clave no es válida, la API responde `503` con un mensaje claro y el detalle técnico queda solo en la terminal del servidor.
+- **Cuota:** cada consulta gasta 1 de las 10.000 unidades gratuitas diarias [[25]](#referencias). Los videos consultados se guardan en caché durante 1 hora para no gastar cuota repetida.
+- **Sin clave:** la aplicación sigue funcionando, pero los videos no se verifican (la API lo avisa al iniciar) y `GET /api/youtube/video` responde `503`.
+
+| Código | Cuándo |
+| :--- | :--- |
+| `200` | Se encontró el video (`GET /api/youtube/video`) |
+| `400` | El enlace no es de YouTube, el video no existe o es privado, o su dueño no permite insertarlo |
+| `401` / `403` | Sin sesión / la sesión no es de un administrador |
+| `503` | YouTube no responde, se agotó la cuota, la clave no es válida o falta `YOUTUBE_API_KEY` |
+
+El código está en `backend/src/services/youtube.service.js`, `backend/src/routes/youtube.routes.js` y `frontend/src/pages/admin/AdminResourceFormPage.tsx`. La carpeta **12** de la colección de Insomnia prueba estos casos.
+
+![El formulario de recursos completa título y duración con los datos de YouTube](img/ef5/youtube-formulario.png)
+
+![GET /api/youtube/video responde 200 con los datos del video](img/ef5/youtube-insomnia.png)
+
 ### Pruebas con Insomnia
 
-La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **86 peticiones** en 12 carpetas, con los casos correctos y los de error de cada módulo, y **100 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
+La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **91 peticiones** en 13 carpetas, con los casos correctos y los de error de cada módulo, y **107 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
 
 - Las peticiones obtienen el token solas desde **Login paciente** o **Login admin**, así que no hay que copiarlo a mano.
 - Las peticiones de editar y eliminar usan el id del registro creado en la misma carpeta.
@@ -942,6 +974,7 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 | 9. Estadísticas | Solo administrador (403 para el paciente). |
 | 10. Errores generales | Ruta inexistente, JSON mal formado e intento de inyección SQL en el id. |
 | 11. Límite de intentos de login | Cinco intentos fallidos con el mismo correo y el sexto bloqueado (429). Si se vuelve a ejecutar antes de 15 minutos, todos responden 429. |
+| 12. YouTube (servicio externo) | Datos de un video (200, o 503 sin `YOUTUBE_API_KEY`), enlace que no es de YouTube (400), paciente (403), sin sesión (401) y recurso con un enlace que no es audio, video ni YouTube (400). |
 
 **Cómo ejecutarla:** en Insomnia, **Import** → elegir el archivo. Después, desde el menú de la colección, **Run** (Collection Runner) ejecuta todas las peticiones en orden y muestra cuántas pruebas pasaron.
 
@@ -1007,6 +1040,7 @@ El frontend también tiene pruebas automáticas con Vitest (npm run test.unit --
 - **PostgreSQL** (base de datos relacional)
 - **JWT + bcrypt** (autenticación y contraseñas)
 - **Insomnia** (pruebas de la API)
+- **YouTube Data API v3** (servicio externo: verifica los videos y obtiene su duración)
 - **Docker + Docker Compose** (despliegue local con contenedores) y **nginx** (sirve el frontend y reenvía /api)
 - **Figma** (prototipo UI/UX)
 - **Capacitor** (empaquetado móvil proyectado, Android 10+ / iOS 16.4+)
@@ -1070,6 +1104,7 @@ Luego hay que completar el archivo `.env`:
 | `CORS_ORIGIN` | URL del frontend que puede llamar a la API | `http://localhost:5173` |
 | `JWT_SECRET` | Clave secreta para firmar los tokens. **Mínimo 32 caracteres**: con una más corta o con el valor de ejemplo, el servidor no arranca | Una cadena aleatoria de 64 caracteres (ver abajo) |
 | `JWT_EXPIRES_IN` | Duración del token | `2h` |
+| `YOUTUBE_API_KEY` | Clave de la YouTube Data API v3. Opcional: sin ella, los videos de YouTube no se verifican | La que se crea en Google Cloud (APIs y servicios → Credenciales → Clave de API) |
 
 Para generar `JWT_SECRET`:
 
@@ -1171,6 +1206,7 @@ Se definen en un archivo `.env` en la raíz del repositorio, a partir de la plan
 | :--- | :--- | :--- |
 | `DB_PASSWORD` | Contraseña de PostgreSQL dentro del contenedor | Letras y números |
 | `JWT_SECRET` | Clave para firmar los tokens (mínimo 32 caracteres) | Una cadena aleatoria (ver abajo) |
+| `YOUTUBE_API_KEY` | Clave de la YouTube Data API v3 (opcional) | La misma de `backend/.env` |
 
 Para generar `JWT_SECRET` sin tener Node.js instalado:
 
@@ -1315,3 +1351,5 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 21. Vite. *Build Options: build.target*. https://vite.dev/config/build-options#build-target
 22. express-rate-limit. *Documentación*. https://www.npmjs.com/package/express-rate-limit
 23. OWASP. *Authentication Cheat Sheet* (protección contra ataques automatizados). https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+24. Google for Developers. *YouTube Data API: Videos: list*. https://developers.google.com/youtube/v3/docs/videos/list
+25. Google for Developers. *YouTube Data API: Getting Started* (cuota de uso). https://developers.google.com/youtube/v3/getting-started

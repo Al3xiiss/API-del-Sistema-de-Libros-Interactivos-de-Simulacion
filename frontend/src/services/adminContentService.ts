@@ -170,3 +170,31 @@ export async function saveResource(input: ResourceInput): Promise<void> {
 }
 
 export const deleteResource = (id: string) => apiDelete(path('/recursos', id));
+
+//  YouTube (servicio externo)
+
+interface VideoYoutubeApi {
+  titulo: string;
+  canal: string;
+  miniatura: string | null;
+  duracion_segundos: number | null;
+}
+
+export interface YoutubeVideo {
+  title: string;
+  channel: string;
+  thumbnail: string | null;
+  /** null en una transmisión en vivo. */
+  durationSeconds: number | null;
+}
+
+/** La API consulta el video en la YouTube Data API: lanza un error si no existe o no se puede insertar. */
+export async function getYoutubeVideo(url: string): Promise<YoutubeVideo> {
+  const video = await apiGet<VideoYoutubeApi>('/youtube/video', { url });
+  return {
+    title: video.titulo,
+    channel: video.canal,
+    thumbnail: video.miniatura,
+    durationSeconds: video.duracion_segundos,
+  };
+}

@@ -5,10 +5,14 @@
 import { BookProgress, Chapter, ChapterStatus, ProgressStore } from '../types';
 import { apiGet, apiPut, path } from './api';
 import { ProgresoLibroApi, toProgressStore } from './mappers';
+import { withOfflineCache } from './offlineCache';
 
+/** Sin conexión se usa el último progreso guardado, para saber qué capítulos están desbloqueados (EF1). */
 export async function getProgress(): Promise<ProgressStore> {
-  const { libros } = await apiGet<{ libros: ProgresoLibroApi[] }>('/progreso');
-  return toProgressStore(libros);
+  return withOfflineCache('progreso', async () => {
+    const { libros } = await apiGet<{ libros: ProgresoLibroApi[] }>('/progreso');
+    return toProgressStore(libros);
+  });
 }
 
 /** Registra que el paciente abrió el capítulo (para "Continúa donde lo dejaste"). */

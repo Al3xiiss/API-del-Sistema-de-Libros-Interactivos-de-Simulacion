@@ -3196,6 +3196,345 @@
       "settingFollowRedirects": "global",
       "preRequestScript": "",
       "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});\n\ninsomnia.test('Explica qué enlaces se aceptan', () => {\n  insomnia.expect(insomnia.response.json().detalles[0].mensaje).to.include('audio o video');\n});"
+    },
+    {
+      "_id": "fld_5505a81e5db24052e8609bd664a12da7",
+      "_type": "request_group",
+      "parentId": "__WORKSPACE_ID__",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "13. Seguridad (EF3)",
+      "description": "Pruebas de seguridad avanzada (EF3): inyección SQL, XSS, tokens manipulados, datos sensibles y CORS. Ver la sección \"Seguridad de la API\" del README.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1400
+    },
+    {
+      "_id": "req_2c9ef57e5322db91f901039b1619c6d9",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Login con inyección SQL en el correo",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"' OR '1'='1' --\",\n  \"password\": \"cualquiera\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 10,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nIntenta entrar sin contraseña con el clásico `' OR '1'='1' --`. Se rechaza porque no es un correo válido, y aunque pasara, la consulta usa parámetros ($1): el texto nunca se mezcla con el SQL.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});\n\ninsomnia.test('No entrega token', () => {\n  insomnia.expect(insomnia.response.json().data).to.equal(undefined);\n});"
+    },
+    {
+      "_id": "req_860f338c67fd38a9b4f602e07d65d31a",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Filtro con inyección SQL",
+      "method": "GET",
+      "url": "{{ _.base_url }}/capitulos?libro_id=1%20OR%201%3D1",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 20,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nEl filtro libro_id debe ser un número entero: `1 OR 1=1` se rechaza antes de llegar a la base de datos.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_e85b3687136cd3ed5daae7b62bbf384f",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Texto con HTML y SQL se guarda como texto",
+      "method": "POST",
+      "url": "{{ _.base_url }}/libros",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"titulo\": \"<script>alert('xss')</script>\",\n  \"sinopsis\": \"'); DROP TABLE libros; -- sinopsis de prueba de seguridad\",\n  \"color_portada\": \"#5B4A8B\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 30,
+      "isPrivate": false,
+      "description": "**Esperado: 201 Created**\n\nEl título lleva un `<script>` y la sinopsis un `DROP TABLE`. La API los guarda tal cual, como texto: el SQL no se ejecuta porque la consulta usa parámetros, y el frontend muestra el `<script>` como texto porque React escapa todo lo que muestra (y la política CSP de nginx bloquea cualquier script que no sea de la app).\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 201 Created', () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.test('Guarda el texto exacto', () => {\n  insomnia.expect(insomnia.response.json().data.titulo).to.equal(\"<script>alert('xss')</script>\");\n  insomnia.expect(insomnia.response.json().data.sinopsis).to.equal(\"'); DROP TABLE libros; -- sinopsis de prueba de seguridad\");\n});"
+    },
+    {
+      "_id": "req_b0ac4e30b6fee303f028b767814a3a65",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "La tabla libros sigue intacta",
+      "method": "GET",
+      "url": "{{ _.base_url }}/libros",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 40,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nDespués del intento anterior la tabla libros sigue existiendo y el libro de prueba aparece con su título como texto.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('El libro de prueba está en la lista', () => {\n  insomnia.expect(insomnia.response.json().data.some((l) => l.titulo === \"<script>alert('xss')</script>\")).to.equal(true);\n});"
+    },
+    {
+      "_id": "req_62aefd96c6bd5e135fcc4a4a296fb217",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Eliminar el libro de prueba de seguridad",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/libros/{% response 'body', 'req_e85b3687136cd3ed5daae7b62bbf384f', 'b64::JC5kYXRhLmlk::46b', 'no-history', 60 %}",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 50,
+      "isPrivate": false,
+      "description": "**Esperado: 204 No Content**\n\nBorra el libro creado en \"Texto con HTML y SQL se guarda como texto\".\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 204 No Content', () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});"
+    },
+    {
+      "_id": "req_bc964f9646e330ccb37c6fcbfb2cbf7e",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Recurso con enlace javascript:",
+      "method": "POST",
+      "url": "{{ _.base_url }}/recursos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 1,\n  \"tipo\": \"video\",\n  \"titulo\": \"Enlace peligroso\",\n  \"url\": \"javascript:alert(document.cookie)\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 60,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nUn enlace `javascript:` ejecutaría código al abrirlo (XSS). Solo se aceptan videos de YouTube y archivos de audio o video de /media/ o con https://.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_00ce1678521a8b4b30e9a246f1e92288",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Recurso con enlace http:// sin cifrar",
+      "method": "POST",
+      "url": "{{ _.base_url }}/recursos",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"capitulo_id\": 1,\n  \"tipo\": \"audio\",\n  \"titulo\": \"Audio sin cifrar\",\n  \"url\": \"http://ejemplo.cl/audio.mp3\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_8eae4dd6d4f150cd8e0588f670983037', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 70,
+      "isPrivate": false,
+      "description": "**Esperado: 400 Bad Request**\n\nLos archivos externos deben usar https://, para que no viajen sin cifrar y coincidan con la política CSP del frontend.\n\nToken: administrador (se obtiene solo desde \"Login admin\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 400 Bad Request', () => {\n  insomnia.expect(insomnia.response.code).to.equal(400);\n});"
+    },
+    {
+      "_id": "req_1ab1ebd293277671d2eaaa7de1d30061",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Token sin firma (alg none)",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpZCI6Miwicm9sIjoiYWRtaW4ifQ.",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 80,
+      "isPrivate": false,
+      "description": "**Esperado: 401 Unauthorized**\n\nToken armado a mano que dice ser del administrador, con el algoritmo `none` y sin firma. Se rechaza porque la API solo acepta tokens HS256 firmados con JWT_SECRET.\n\nToken: falso, escrito a mano.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 401 Unauthorized', () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});"
+    },
+    {
+      "_id": "req_0dd17a976dfa6c68b6982b92cce782ed",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "Mi perfil no expone la contraseña",
+      "method": "GET",
+      "url": "{{ _.base_url }}/auth/me",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "{% response 'body', 'req_46a96a79cdf7cf159d0f040a452b2155', 'b64::JC5kYXRhLnRva2Vu::46b', 'when-expired', 3600 %}",
+        "prefix": "",
+        "disabled": false
+      },
+      "metaSortKey": 90,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nLa respuesta trae los datos del usuario, pero nunca password_hash.\n\nToken: paciente (se obtiene solo desde \"Login paciente\").",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('No incluye password_hash', () => {\n  insomnia.expect(insomnia.response.json().data).to.not.have.property('password_hash');\n});"
+    },
+    {
+      "_id": "req_44f728454dac11565a080c2e3d594e2d",
+      "_type": "request",
+      "parentId": "fld_5505a81e5db24052e8609bd664a12da7",
+      "modified": 1792843200000,
+      "created": 1792843200000,
+      "name": "CORS: sitio no permitido",
+      "method": "GET",
+      "url": "{{ _.base_url }}/health",
+      "body": {},
+      "headers": [
+        {
+          "name": "Origin",
+          "value": "https://sitio-malicioso.example"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 100,
+      "isPrivate": false,
+      "description": "**Esperado: 200 OK**\n\nLa petición dice venir de otro sitio (encabezado Origin). La API responde, pero sin `Access-Control-Allow-Origin`: el navegador de ese sitio no le deja leer la respuesta. Solo el frontend (CORS_ORIGIN) recibe ese permiso.",
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "preRequestScript": "",
+      "afterResponseScript": "insomnia.test('Responde 200 OK', () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test('No autoriza al otro sitio', () => {\n  const permiso = insomnia.response.headers.find((h) => h.key.toLowerCase() === 'access-control-allow-origin');\n  insomnia.expect(permiso).to.equal(undefined);\n});"
     }
   ]
 }

@@ -67,7 +67,8 @@ Si los datos enviados no pasan la validación, también llega la lista `detalles
 | `403 Forbidden` | El usuario tiene sesión, pero su rol no le permite la acción |
 | `404 Not Found` | El registro o la ruta no existe |
 | `409 Conflict` | Valor repetido (por ejemplo, un correo ya registrado) o una acción que no corresponde al estado actual, como completar un capítulo cuando el anterior está pendiente |
-| `429 Too Many Requests` | Demasiados intentos fallidos de inicio de sesión: 5 en 15 minutos para el mismo correo desde la misma IP |
+| `413 Payload Too Large` | El cuerpo de la petición pesa más de 100 KB |
+| `429 Too Many Requests` | Demasiados intentos fallidos de inicio de sesión (5 en 15 minutos para el mismo correo desde la misma IP) o demasiadas cuentas nuevas desde la misma IP (20 por hora) |
 | `500 Internal Server Error` | Error inesperado. Se registra en la terminal del servidor y al cliente solo le llega un mensaje genérico |
 | `503 Service Unavailable` | YouTube no responde, se agotó la cuota o falta `YOUTUBE_API_KEY` (solo al guardar recursos de YouTube y en `/youtube/video`) |
 
@@ -142,6 +143,7 @@ En las tablas, **Acceso** indica quién puede usar la ruta: Público (sin token)
 
 - Responde `201` con el usuario creado, que siempre tiene `"rol": "patient"`, aunque el cuerpo pida otro rol.
 - Responde `409` si el alias o el correo ya existen.
+- Responde `429` si desde la misma IP ya se crearon 20 cuentas en la última hora. Los registros rechazados no suman.
 
 **`POST /auth/login`**
 
@@ -350,7 +352,7 @@ Respuesta de `GET /simulaciones/1`:
 | `tipo` | Obligatorio. `video` o `audio` |
 | `titulo` | Obligatorio. De 3 a 100 caracteres |
 | `descripcion` | Opcional. Hasta 300 caracteres |
-| `url` | Opcional, hasta 500 caracteres. Un video de YouTube (`youtube.com/watch?v=`, `youtu.be/`, `shorts/` o `embed/`), un archivo de `/media/` o la dirección `http(s)://` de un archivo `.mp3`, `.m4a`, `.ogg`, `.wav`, `.mp4` o `.webm`. Cualquier otra página responde `400` |
+| `url` | Opcional, hasta 500 caracteres. Un video de YouTube (`youtube.com/watch?v=`, `youtu.be/`, `shorts/` o `embed/`), un archivo de `/media/` o la dirección `https://` de un archivo `.mp3`, `.m4a`, `.ogg`, `.wav`, `.mp4` o `.webm`. Cualquier otra página responde `400` |
 | `duracion_segundos` | Opcional. Entero entre 1 y 86.400 |
 
 **Videos de YouTube:** si `YOUTUBE_API_KEY` está configurada, al crear o editar un recurso con un enlace de YouTube la API consulta el video en la YouTube Data API. Si no existe, es privado o no se puede insertar, responde `400` y no guarda nada; si existe, guarda su duración real en `duracion_segundos`. Si YouTube no responde, responde `503`.
@@ -484,6 +486,8 @@ Los videos consultados se guardan en caché durante 1 hora para no gastar cuota 
 | **JWT** firmado con `JWT_SECRET`, con vencimiento y solo el algoritmo `HS256` aceptado | `services/auth.service.js`, `middlewares/auth.js` |
 | Control de **roles**: `verificarToken` (401) y `permitirRoles('admin')` (403). El rol se lee desde la base de datos en cada petición, así un administrador degradado pierde el acceso de inmediato | `middlewares/auth.js` |
 | **Límite de intentos de login**: 5 fallidos en 15 minutos por IP y correo → `429` | `middlewares/limiteLogin.js` |
+| **Límite de cuentas nuevas**: 20 por hora desde la misma IP → `429` (los registros rechazados no suman) | `middlewares/limiteRegistro.js` |
+| **Límite de tamaño**: el cuerpo JSON acepta hasta 100 KB → `413` | `app.js`, `middlewares/errorHandler.js` |
 | `JWT_SECRET` de **32 caracteres o más**; el servidor no arranca con una clave corta o con la de ejemplo | `server.js` |
 | Reglas de negocio en la API, no solo en la interfaz: un capítulo no se puede completar si el anterior está pendiente (`409`) | `services/progreso.service.js` |
 | La base de datos también valida el formato del correo, que esté en minúsculas y el color `#RRGGBB` (`CHECK`) | `database/database.sql` |
@@ -491,7 +495,9 @@ Los videos consultados se guardan en caché durante 1 hora para no gastar cuota 
 | Protección contra **inyección SQL**: todas las consultas usan parámetros (`$1`, `$2`...), nunca texto concatenado | `services/` |
 | Los datos propios (progreso y decisiones) usan el id del **token**, nunca uno enviado por el cliente | `services/progreso.service.js`, `services/decisiones.service.js` |
 | Solo se guardan los campos esperados: el registro ignora un `rol` enviado en el cuerpo | `services/` |
-| Cabeceras HTTP de seguridad con **helmet** y **CORS** limitado al frontend (`CORS_ORIGIN`) | `app.js` |
+| Cabeceras HTTP de seguridad con **helmet** | `app.js` |
+| **CORS** solo para los orígenes de `CORS_ORIGIN` (uno o varios, separados por coma), con los métodos `GET`, `POST`, `PUT` y `DELETE` y los encabezados `Content-Type` y `Authorization`. Si la variable falta, no se acepta ningún origen | `app.js` |
+| Protección contra **XSS**: los textos se guardan tal cual y el frontend (React) los muestra como texto. Los enlaces de recursos solo pueden ser YouTube o archivos de audio o video de `/media/` o con `https://` (`javascript:` y `data:` responden `400`) | `validators/recursos.validators.js` |
 | Errores sin detalles internos: los 500 se registran en el servidor y el cliente recibe un mensaje genérico | `middlewares/errorHandler.js` |
 | Las restricciones de la base de datos (UNIQUE, FOREIGN KEY, CHECK) se traducen a `400` o `409` | `utils/pgErrors.js` |
 | Transacciones en operaciones de varios pasos (crear simulación con opciones, reiniciar libro) | `utils/transaccion.js` |
@@ -502,7 +508,7 @@ Los videos consultados se guardan en caché durante 1 hora para no gastar cuota 
 
 ## Pruebas con Insomnia
 
-La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **91 peticiones** en 13 carpetas, con **107 pruebas automáticas**: los casos correctos y los de error (400, 401, 403, 404, 409, 429 y 503) de cada módulo. Cada petición incluye:
+La colección [`insomnia-libros-interactivos.json`](./insomnia-libros-interactivos.json) tiene **101 peticiones** en 14 carpetas, con **122 pruebas automáticas**: los casos correctos y los de error (400, 401, 403, 404, 409, 429 y 503) de cada módulo, y una carpeta de pruebas de seguridad (**13. Seguridad (EF3)**): inyección SQL, XSS, token sin firma, datos sensibles y CORS. Cada petición incluye:
 
 - Una descripción, en la pestaña **Docs**, con la respuesta esperada.
 - Pruebas automáticas.

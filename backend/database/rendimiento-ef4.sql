@@ -24,6 +24,18 @@ SET LOCAL max_parallel_workers_per_gather = 0;  -- sin procesos paralelos, igual
 DROP INDEX IF EXISTS idx_opciones_simulacion, idx_recursos_capitulo, idx_personajes_capitulo,
   idx_simulaciones_personaje, idx_progreso_capitulo, idx_decisiones_simulacion, idx_decisiones_opcion;
 
+-- Los contadores de id (secuencias) no se deshacen con ROLLBACK: se guardan para dejarlos como estaban al final.
+-- Sin esto, los registros que se creen después en la app tendrían ids muy altos (por ejemplo 180007).
+CREATE TEMP TABLE secuencias (nombre text, valor bigint, usado boolean);
+INSERT INTO secuencias
+SELECT 'libros_id_seq', last_value, is_called FROM libros_id_seq UNION ALL
+SELECT 'capitulos_id_seq', last_value, is_called FROM capitulos_id_seq UNION ALL
+SELECT 'personajes_id_seq', last_value, is_called FROM personajes_id_seq UNION ALL
+SELECT 'simulaciones_id_seq', last_value, is_called FROM simulaciones_id_seq UNION ALL
+SELECT 'opciones_simulacion_id_seq', last_value, is_called FROM opciones_simulacion_id_seq UNION ALL
+SELECT 'recursos_id_seq', last_value, is_called FROM recursos_id_seq UNION ALL
+SELECT 'usuarios_id_seq', last_value, is_called FROM usuarios_id_seq;
+
 -- 2. Datos de prueba: 200 libros de 100 capítulos, cada capítulo con un personaje, una simulación
 --    de 4 opciones y 3 recursos; 2.000 pacientes que completaron 50 capítulos y tomaron sus decisiones.
 \echo 'Cargando datos de prueba...'
@@ -191,5 +203,8 @@ JOIN resultados a ON a.orden = c.orden AND a.etapa = 'antes'
 JOIN resultados d ON d.orden = c.orden AND d.etapa = 'despues'
 ORDER BY c.orden;
 
+-- Las secuencias vuelven a su valor inicial (setval sí queda guardado aunque después venga ROLLBACK)
+SELECT COUNT(setval(nombre, valor, usado)) AS secuencias FROM secuencias \gset
+
 ROLLBACK;
-\echo 'Listo: se deshicieron los datos de prueba (ROLLBACK).'
+\echo 'Listo: se deshicieron los datos de prueba (ROLLBACK) y los contadores de id quedaron como estaban.'

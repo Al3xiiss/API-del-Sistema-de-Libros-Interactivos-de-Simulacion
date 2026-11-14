@@ -5,6 +5,7 @@ import {
 } from '@ionic/react';
 import { FormEvent, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { preloadSection } from '../../routes/lazySections';
 import { homeForRole } from '../../services/authService';
 import { fieldClass, isValidEmail } from '../../utils/validators';
 
@@ -33,6 +34,8 @@ const LoginPage: React.FC = () => {
       const user = await login(email, password);
       setPassword('');
       setTouched({ email: false, password: false });
+      // Se descargan las pantallas del rol antes de navegar, así la transición es fluida (EF2).
+      await preloadSection(user.role).catch(() => undefined);
       // Redirección según el rol; 'root' reinicia el historial (no se vuelve al login con "atrás").
       router.push(homeForRole(user.role), 'root', 'replace');
     } catch (err) {

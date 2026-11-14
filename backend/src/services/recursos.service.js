@@ -3,6 +3,7 @@
 import { pool } from '../config/db.js';
 import { HttpError } from '../utils/httpError.js';
 import { traducirErrorPg } from '../utils/pgErrors.js';
+import { extraerIdYoutube, obtenerVideo, youtubeConfigurado } from './youtube.service.js';
 
 const MENSAJES = {
   recursos_capitulo_id_fkey: 'El capítulo indicado no existe',
@@ -35,7 +36,17 @@ export async function obtener(id) {
   return rows[0];
 }
 
-export async function crear({ capitulo_id, tipo, titulo, descripcion, url, duracion_segundos }) {
+// Si el enlace es de YouTube, se verifica con la YouTube Data API (servicio externo)
+// y la duración se toma del video. Sin YOUTUBE_API_KEY se guarda tal como llega.
+async function completarConYoutube(datos) {
+  const id = datos.url ? extraerIdYoutube(datos.url) : null;
+  if (!id || !youtubeConfigurado()) return datos;
+  const video = await obtenerVideo(id);
+  return { ...datos, duracion_segundos: video.duracion_segundos ?? datos.duracion_segundos };
+}
+
+export async function crear(datos) {
+  const { capitulo_id, tipo, titulo, descripcion, url, duracion_segundos } = await completarConYoutube(datos);
   try {
     const { rows } = await pool.query(
       `INSERT INTO recursos (capitulo_id, tipo, titulo, descripcion, url, duracion_segundos)
@@ -49,7 +60,8 @@ export async function crear({ capitulo_id, tipo, titulo, descripcion, url, durac
   }
 }
 
-export async function actualizar(id, { capitulo_id, tipo, titulo, descripcion, url, duracion_segundos }) {
+export async function actualizar(id, datos) {
+  const { capitulo_id, tipo, titulo, descripcion, url, duracion_segundos } = await completarConYoutube(datos);
   try {
     const { rowCount } = await pool.query(
       `UPDATE recursos

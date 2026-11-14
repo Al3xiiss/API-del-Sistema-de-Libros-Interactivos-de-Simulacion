@@ -14,12 +14,21 @@
 - **Seguridad de la API (EF):** correcciones de la EP2: restricciones `CHECK` en la base de datos, desbloqueo progresivo de capítulos validado en la API (409), rol vigente en cada petición, límite de intentos de inicio de sesión (429) y `JWT_SECRET` de al menos 32 caracteres (`backend/src/`).
 - **Despliegue con Docker (EF):** Dockerfiles del backend y del frontend, nginx como servidor y proxy de la API, y `docker-compose.yml` para levantar base de datos, API y frontend.
 - **Frontend (EF):** pantallas de administración de capítulos, simulaciones (con sus opciones) y recursos, y pruebas de los interceptores de Axios con Vitest (frontend/src/services/api.test.ts).
+- **Servicio externo (EF5):** integración con la YouTube Data API para verificar los videos y obtener su duración, y botón *Completar con YouTube* en el formulario de recursos.
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
+- **Notificaciones y almacenamiento local (EF1):** recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión de los capítulos ya abiertos (`frontend/src/services/offlineCache.ts` y `reminderService.ts`).
+- **UI/UX y rendimiento (EF2):** auditoría con Lighthouse antes y después, correcciones de accesibilidad (contraste, zoom e idioma), revisión responsive de 360 a 1920 px y carga diferida de las secciones de la aplicación.
+- **Optimización de consultas (EF4):** 7 índices en las claves foráneas y medición con `EXPLAIN ANALYZE` antes y después (`backend/database/rendimiento-ef4.sql`).
+- **Seguridad avanzada (EF3):** CORS solo para los orígenes configurados, límites de cuentas nuevas y de tamaño de las peticiones, enlaces externos solo con https, y política CSP y cabeceras de seguridad en nginx (`backend/src/app.js`, `frontend/security-headers.conf`).
+- **Documentación final (EF):** requerimientos RF-13 a RF-23, matriz de trazabilidad y evolución del proyecto entre entregas.
+
+
 
 ## Índice
 1. [Descripción general del sistema](#descripción-general-del-sistema)
     - [Objetivos](#objetivos-del-proyecto)
     - [Principales funcionalidades](#principales-funcionalidades)
+    - [Evolución del proyecto entre entregas](#evolución-del-proyecto-cambios-y-correcciones-entre-entregas)
 2. [Justificación del problema](#justificación-del-problema)
     - [Análisis de soluciones existentes](#análisis-de-soluciones-existentes)
 3. [Usuarios](#usuarios-objetivo-quién-usará-la-aplicación)
@@ -27,19 +36,24 @@
     - [Proto-personas](#proto-personas)
     - [Supuestos](#supuestos-utilizados)
 4. [Requerimientos](#requerimientos)
+    - [Matriz de trazabilidad](#matriz-de-trazabilidad)
 5. [Arquitectura de la Información/ UX](#arquitectura-de-navegación)
     - [Diferenciación x roles](#diferenciación-de-acceso-según-roles)
     - [Flujos principales Tareas](#flujos-de-tareas)
     - [Puntos críticos de interacción](#puntos-críticos-de-interacción)
     - [Justificación Técnica](#justificación-técnica)
 6. [Bocetos UX/UI](#bocetos-uiux)
+    - [Mejoras de UI/UX y rendimiento (EF2)](#mejoras-de-uiux-y-rendimiento-ef2)
 7. [Backend y API REST (EP2)](#backend-y-api-rest-ep2)
     - [Arquitectura del backend](#arquitectura-del-backend)
     - [Base de datos](#base-de-datos)
+    - [Optimización de consultas (EF4)](#optimización-de-consultas-ef4)
     - [API REST](#api-rest)
     - [Autenticación y roles](#autenticación-y-roles)
     - [Seguridad de la API](#seguridad-de-la-api)
     - [Integración con el frontend](#integración-con-el-frontend)
+    - [Servicio externo: YouTube Data API (EF5)](#servicio-externo-youtube-data-api-ef5)
+    - [Notificaciones y almacenamiento local (EF1)](#notificaciones-y-almacenamiento-local-ef1)
     - [Pruebas con Insomnia](#pruebas-con-insomnia)
 8. [Librerías y Tecnologías](#librerías-usadas-con-react-ionic)
 9. [Instalación y configuración](#instalación-y-configuración)
@@ -53,11 +67,13 @@
 11. [Referencias](#referencias)
 
 ## Descripción general del sistema
-El Sistema de Libros Interactivos de Simulación es una aplicación multiplataforma (web y móvil) desarrollada con Ionic + React que acompaña emocionalmente a pacientes en tratamiento oncológico mediante historias narrativas. El paciente lee libros organizados en capítulos, participa en simulaciones donde un personaje enfrenta situaciones cotidianas, toma decisiones que cambian el desenlace, reproduce recursos multimedia de apoyo y revisa su progreso. Los administradores (psicooncólogos) gestionan los libros y los personajes desde un panel propio.
+El Sistema de Libros Interactivos de Simulación es una aplicación multiplataforma (web y móvil) desarrollada con Ionic + React que acompaña emocionalmente a pacientes en tratamiento oncológico mediante historias narrativas. El paciente lee libros organizados en capítulos, participa en simulaciones donde un personaje enfrenta situaciones cotidianas, toma decisiones que cambian el desenlace, reproduce recursos multimedia de apoyo y revisa su progreso. Los administradores (psicooncólogos) gestionan los libros, capítulos, personajes, simulaciones y recursos multimedia desde un panel propio.
 
 **Alcance de la Entrega Parcial 1:** frontend navegable con rutas públicas y protegidas, separación por roles y versiones móvil y web, con datos simulados.
 
 **Alcance de la Entrega Parcial 2:** backend en Node.js + Express con base de datos PostgreSQL; API REST con CRUD de libros, capítulos, personajes, simulaciones, recursos, progreso y decisiones; autenticación con JWT y control de roles; contraseñas encriptadas con bcrypt, validación de datos y protección contra inyección SQL. El frontend reemplaza los datos simulados por llamadas a la API con Axios e interceptores, y la API se prueba con una colección de Insomnia (ver [Backend y API REST](#backend-y-api-rest-ep2)).
+
+**Alcance de la Entrega Final:** panel de administración completo (capítulos, simulaciones con sus opciones y recursos multimedia); notificaciones y lectura sin conexión (EF1); mejoras de accesibilidad y rendimiento medidas con Lighthouse (EF2); seguridad avanzada con CORS restringido, límites de peticiones y política CSP (EF3); índices en la base de datos medidos con `EXPLAIN ANALYZE` (EF4); integración con la YouTube Data API (EF5) y despliegue con Docker. Los cambios entre entregas se resumen en [Evolución del proyecto](#evolución-del-proyecto-cambios-y-correcciones-entre-entregas).
 
 ### Objetivos del proyecto
 **Objetivo general**
@@ -69,14 +85,14 @@ Desarrollar una aplicación web y móvil que centralice el acompañamiento emoci
 2. Diseñar un prototipo UI/UX en Figma, en versiones móvil y web, coherente con las necesidades de accesibilidad de los pacientes.
 3. Implementar en Ionic + React una arquitectura de navegación con rutas públicas, rutas protegidas y diferenciación de acceso por rol.
 4. Permitir que el paciente lea capítulos, participe en simulaciones, tome decisiones, reproduzca recursos multimedia y consulte su propio progreso.
-5. Permitir que el administrador gestione el catálogo de libros y los personajes que participan en las simulaciones.
+5. Permitir que el administrador gestione el catálogo de libros, sus capítulos, los personajes, las simulaciones con sus opciones de decisión y los recursos multimedia de apoyo.
 6. Proteger la identidad del paciente mediante el uso de alias, mensajes de error que no revelan información y acceso a estadísticas únicamente propias.
 
 ### Principales funcionalidades
 | Funcionalidad | Rol | Requerimiento |
 | :--- | :--- | :--- |
 | Biblioteca con "Continúa donde lo dejaste" y buscador | Paciente | RF-04 |
-| Lectura por capítulos con desbloqueo progresivo | Paciente | RF-04 |
+| Lectura por capítulos con desbloqueo progresivo y aviso del capítulo desbloqueado | Paciente | RF-04 |
 | Simulación con personaje y contexto narrativo | Paciente | RF-05 |
 | Toma de decisiones con confirmación y consecuencia | Paciente | RF-06 |
 | Reproductor de recursos multimedia (audio/video) | Paciente y Administrador | RF-07 |
@@ -84,7 +100,56 @@ Desarrollar una aplicación web y móvil que centralice el acompañamiento emoci
 | Resumen global de la plataforma | Administrador | RF-09 |
 | Crear, editar y eliminar libros | Administrador | RF-01, RF-02 y RF-03 |
 | Crear, editar y eliminar personajes asociados a capítulos | Administrador | RF-10, RF-11 y RF-12 |
+| Crear, editar y eliminar capítulos de un libro | Administrador | RF-13, RF-14 y RF-15 |
+| Crear, editar y eliminar simulaciones con sus opciones de decisión | Administrador | RF-16, RF-17 y RF-18 |
+| Crear, editar y eliminar recursos multimedia, con verificación de los videos de YouTube | Administrador | RF-19, RF-20 y RF-21 |
+| Recordatorio diario de lectura | Paciente | RF-22 |
+| Lectura sin conexión de los capítulos ya abiertos | Paciente | RF-23 |
 | Registro, inicio y cierre de sesión con control por rol | Todos | FT-01 a FT-04 |
+
+### Evolución del proyecto: cambios y correcciones entre entregas
+
+El proyecto se construyó en tres entregas. Cada una partió de la anterior y corrigió lo observado en la retroalimentación o en las pruebas del equipo. El historial completo está en los commits de la rama `backend`.
+
+| Entrega | Fecha | Qué se entregó |
+| :--- | :--- | :--- |
+| Entrega Parcial 1 (EP1) | Septiembre de 2026 | Frontend en Ionic + React con datos simulados, rutas públicas y protegidas, separación por rol, versiones móvil y web, y bocetos en Figma. Siete requerimientos funcionales agrupados (por ejemplo, *Gestión de libros*). |
+| Entrega Parcial 2 (EP2) | Octubre de 2026 | API REST con Node.js + Express y PostgreSQL (9 tablas), autenticación con JWT y roles, CRUD de todos los módulos, colección de Insomnia y `endpoints.md`. El frontend dejó los datos simulados y pasó a usar la API con Axios e interceptores. Recursos con videos de YouTube. |
+| Entrega Final (EF) | Noviembre de 2026 | Correcciones de seguridad de la EP2, pantallas de administración que faltaban, despliegue con Docker y las mejoras EF1 a EF5. |
+
+**De la EP1 a la EP2: correcciones según la retroalimentación de la EP1** (commit `fb52672`)
+
+| Observación | Corrección |
+| :--- | :--- |
+| Cada requerimiento agrupaba varias funcionalidades. Por ejemplo, *RF-01 Gestión de libros* incluía crear, editar y eliminar. | Se reescribieron con una sola funcionalidad cada uno y la estructura producto + verbo + necesidad. Los 7 requerimientos pasaron a 12: libros quedó como RF-01 Crear, RF-02 Editar y RF-03 Eliminar; personajes como RF-10, RF-11 y RF-12; y la consulta de progreso se separó en RF-08 (avance propio del paciente) y RF-09 (resumen de la plataforma para el administrador). Los comentarios del código se actualizaron a la nueva numeración. |
+| La compatibilidad (RNF-COM-01) solo decía "web adaptable a móvil y escritorio", sin navegadores ni versiones. | RNF-COM-01 indica la versión mínima de cada navegador (Chrome y Edge 111, Firefox 114, Safari 16.4), que coincide con el objetivo de compilación de Vite, y el ancho mínimo de pantalla. |
+
+**De la EP2 a la EF: correcciones de seguridad y de alcance**
+
+Al revisar la EP2 se encontraron casos en que la API confiaba en el frontend o en el token. Se corrigieron antes de agregar funciones nuevas:
+
+| Problema | Corrección | Commit |
+| :--- | :--- | :--- |
+| La base de datos aceptaba un correo o un color de portada con formato inválido si alguien se saltaba la API. | Restricciones `CHECK` en `usuarios.email` y `libros.color_portada`. | `5fa602e` |
+| El desbloqueo progresivo de capítulos se controlaba solo en el frontend: con Insomnia se podía completar un capítulo sin haber terminado el anterior. | La API responde `409` si el capítulo anterior no está completado. | `2d93ac9` |
+| El rol se leía del token: si un administrador pasaba a paciente, mantenía sus permisos hasta que el token vencía. | `verificarToken` lee el rol vigente desde la base de datos en cada petición. | `6bc8c0b` |
+| El login aceptaba intentos ilimitados, lo que permitía adivinar contraseñas por fuerza bruta. | Después de 5 intentos fallidos con el mismo correo desde la misma IP, la API responde `429` durante 15 minutos. | `18b610b` |
+| Un `JWT_SECRET` corto o el valor de ejemplo permitían falsificar tokens. | La API no inicia si `JWT_SECRET` tiene menos de 32 caracteres o es el valor de ejemplo. | `98aceac` |
+| La colección de Insomnia no probaba estos casos. | Pruebas de `409` y `429`. | `f883b2a` |
+| Las rutas de administración de capítulos, simulaciones y recursos estaban planificadas, pero no tenían pantallas. Además, `/app/characters` y `/admin/progress` no correspondían a ningún requerimiento. | Se implementaron las pantallas de capítulos, simulaciones (con sus opciones) y recursos (RF-13 a RF-21). `/app/characters` y `/admin/progress` pasaron a trabajo futuro. | `c62892a`, `edb7fde`, `dc32680` |
+
+**Entrega Final: funciones y mejoras nuevas**
+
+| Mejora | Qué agrega | Detalle |
+| :--- | :--- | :--- |
+| Pantallas de administración | Gestión de capítulos, simulaciones y recursos (RF-13 a RF-21) y pruebas de los interceptores de Axios con Vitest | [Rutas del administrador](#rutas-protegidas-del-administrador) |
+| Despliegue | Base de datos, API y frontend con Docker Compose; nginx sirve el frontend y reenvía `/api` | [Despliegue con Docker](#despliegue-con-docker) |
+| EF1: Notificaciones y almacenamiento local | Recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión (RF-22 y RF-23) | [EF1](#notificaciones-y-almacenamiento-local-ef1) |
+| EF2: UI/UX y rendimiento | Accesibilidad y SEO de Lighthouse en 100, carga diferida por sección y 21 % menos JavaScript en el login | [EF2](#mejoras-de-uiux-y-rendimiento-ef2) |
+| EF3: Seguridad avanzada | CORS solo para los orígenes configurados, límites de cuentas nuevas (`429`) y de tamaño de las peticiones (`413`), enlaces externos solo con https, y política CSP y cabeceras de seguridad en nginx | [EF3](#seguridad-de-la-api) |
+| EF4: Optimización de consultas | 7 índices en las claves foráneas; consultas hasta 153 veces más rápidas con datos a mayor escala | [EF4](#optimización-de-consultas-ef4) |
+| EF5: Servicio externo | YouTube Data API para verificar los videos y completar su título y duración | [EF5](#servicio-externo-youtube-data-api-ef5) |
+| Documentación | 23 requerimientos funcionales (RF-13 a RF-23 son nuevos) y una matriz de trazabilidad | [Matriz de trazabilidad](#matriz-de-trazabilidad) |
 
 ---
 ## Justificación del problema
@@ -204,6 +269,8 @@ Leer historias de personajes que atraviesan situaciones similares a la suya y to
 - Tomar decisión (RF-06).
 - Reproducir recurso multimedia (RF-07).
 - Consultar progreso propio (RF-08).
+- Programar recordatorio de lectura (RF-22).
+- Leer sin conexión (RF-23).
 
 #### Dispositivo y contexto probable de acceso
 
@@ -239,6 +306,9 @@ Crear un libro, definir los personajes que participan en sus simulaciones y revi
 - Reproducir recurso multimedia (RF-07).
 - Consultar resumen de la plataforma (RF-09).
 - Crear, editar y eliminar personajes (RF-10, RF-11 y RF-12).
+- Crear, editar y eliminar capítulos (RF-13, RF-14 y RF-15).
+- Crear, editar y eliminar simulaciones (RF-16, RF-17 y RF-18).
+- Crear, editar y eliminar recursos multimedia (RF-19, RF-20 y RF-21).
 
 #### Dispositivo y contexto probable de acceso
 
@@ -265,7 +335,7 @@ Los perfiles anteriores se construyeron a partir de los siguientes supuestos:
 | **RF-01** | Crear libro | El sistema deberá permitir al administrador **crear** un libro interactivo con título y sinopsis, para publicar nuevo contenido de apoyo emocional. | Administrador | Estar autenticado como administrador. | 1. Accede a "Gestión de libros".<br>2. Presiona "Nuevo libro".<br>3. Completa título y sinopsis.<br>4. Presiona "Guardar". | El libro aparece en el catálogo y se muestra el mensaje "Libro creado." |
 | **RF-02** | Editar libro | El sistema deberá permitir al administrador **editar** el título y la sinopsis de un libro existente, para corregir o actualizar el contenido publicado. | Administrador | Estar autenticado como administrador y que el libro exista. | 1. Accede a "Gestión de libros".<br>2. Presiona "Editar" en el libro.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El libro se actualiza en el catálogo y se muestra el mensaje "Libro actualizado." |
 | **RF-03** | Eliminar libro | El sistema deberá permitir al administrador **eliminar** un libro, previa confirmación, para retirar contenido que ya no corresponde publicar. | Administrador | Estar autenticado como administrador y que el libro exista. | 1. Accede a "Gestión de libros".<br>2. Presiona "Eliminar" en el libro.<br>3. Confirma en el cuadro de diálogo. | El libro deja de estar disponible junto con sus capítulos y simulaciones, y se muestra el mensaje "Libro eliminado." |
-| **RF-04** | Leer capítulo | El sistema deberá permitir al paciente **leer** los capítulos de un libro en orden, desbloqueando cada uno al completar el anterior, para avanzar en la historia a su propio ritmo. | Usuario/Paciente | Tener sesión iniciada y un libro seleccionado. | 1. Abre el libro desde "Mis libros".<br>2. Selecciona un capítulo disponible.<br>3. Lee y presiona "Siguiente". | El capítulo queda guardado como última lectura y, al terminarlo, se desbloquea el siguiente. |
+| **RF-04** | Leer capítulo | El sistema deberá permitir al paciente **leer** los capítulos de un libro en orden, desbloqueando cada uno al completar el anterior, para avanzar en la historia a su propio ritmo. | Usuario/Paciente | Tener sesión iniciada y un libro seleccionado. | 1. Abre el libro desde "Mis libros".<br>2. Selecciona un capítulo disponible.<br>3. Lee y presiona "Siguiente". | El capítulo queda guardado como última lectura y, al terminarlo, se desbloquea el siguiente y se muestra el aviso "Desbloqueaste el capítulo N: título". |
 | **RF-05** | Iniciar simulación | El sistema deberá permitir al paciente **iniciar** la simulación de un capítulo, mostrando el personaje y el contexto, para situarse en el escenario narrativo antes de decidir. | Usuario/Paciente | Estar en un capítulo que termina en simulación. | 1. Presiona "Ir a la simulación".<br>2. Revisa el personaje y el contexto.<br>3. Presiona "Iniciar simulación". | La interfaz cambia al modo de toma de decisión. |
 | **RF-06** | Tomar decisión | El sistema deberá permitir al paciente **registrar** su decisión, eligiendo y confirmando una de las opciones de la simulación, para conocer su consecuencia y explorar escenarios en un entorno seguro. | Usuario/Paciente | Simulación iniciada con opciones en pantalla. | 1. Lee la pregunta.<br>2. Selecciona una tarjeta de opción.<br>3. Presiona "Confirmar decisión". | Se guarda la decisión, se muestra su consecuencia y se desbloquea el siguiente capítulo. |
 | **RF-07** | Reproducir recurso multimedia | El sistema deberá permitir al paciente y al administrador **reproducir** los videos y audios de apoyo de cada capítulo, para complementar la lectura con ejercicios de relajación y contenido visual. | Usuario/Paciente y Administrador | Tener sesión iniciada y que el capítulo tenga recursos. | 1. Presiona la pestaña "Recursos" o "Ver recursos del capítulo".<br>2. Selecciona un recurso.<br>3. Presiona reproducir. | El recurso se reproduce mostrando su avance y duración. |
@@ -274,17 +344,62 @@ Los perfiles anteriores se construyeron a partir de los siguientes supuestos:
 | **RF-10** | Crear personaje | El sistema deberá permitir al administrador **crear** un personaje con nombre, descripción, atributos y capítulo asociado, para que participe en las simulaciones de ese capítulo. | Administrador | Estar autenticado como administrador y que exista al menos un capítulo. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Nuevo personaje".<br>3. Completa los datos y elige el capítulo.<br>4. Presiona "Guardar". | El personaje queda disponible para las simulaciones del capítulo y se muestra el mensaje "Personaje creado." |
 | **RF-11** | Editar personaje | El sistema deberá permitir al administrador **editar** los datos o el capítulo asociado de un personaje existente, para mantener coherente la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Editar" en el personaje.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El personaje se actualiza y se muestra el mensaje "Personaje actualizado." |
 | **RF-12** | Eliminar personaje | El sistema deberá permitir al administrador **eliminar** un personaje, previa confirmación, para retirarlo de la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Eliminar" en el personaje.<br>3. Confirma en el cuadro de diálogo. | El personaje se elimina, las simulaciones donde aparecía muestran un personaje genérico y se muestra el mensaje "Personaje eliminado." |
+| **RF-13** | Crear capítulo | El sistema deberá permitir al administrador **crear** un capítulo de un libro con número, título y contenido, para ampliar la historia que leen los pacientes. | Administrador | Estar autenticado como administrador y que exista al menos un libro. | 1. Accede a "Gestión de capítulos" y elige el libro.<br>2. Presiona "Nuevo capítulo".<br>3. Completa título y contenido; si deja vacío el número, se usa el siguiente del libro.<br>4. Presiona "Guardar". | El capítulo aparece en la lista del libro y se muestra el mensaje "Capítulo creado." Si el libro ya tiene un capítulo con ese número, se muestra un mensaje de error y no se guarda. |
+| **RF-14** | Editar capítulo | El sistema deberá permitir al administrador **editar** el número, el título o el contenido de un capítulo existente, para corregir o mejorar el texto de la historia. | Administrador | Estar autenticado como administrador y que el capítulo exista. | 1. Accede a "Gestión de capítulos" y elige el libro.<br>2. Presiona "Editar" en el capítulo.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El capítulo se actualiza y se muestra el mensaje "Capítulo actualizado." |
+| **RF-15** | Eliminar capítulo | El sistema deberá permitir al administrador **eliminar** un capítulo, previa confirmación, para retirarlo de la historia. | Administrador | Estar autenticado como administrador y que el capítulo exista. | 1. Accede a "Gestión de capítulos" y elige el libro.<br>2. Presiona "Eliminar" en el capítulo.<br>3. Confirma en el cuadro de diálogo, que advierte qué más se eliminará. | El capítulo se elimina junto con sus personajes, su simulación, sus recursos y el progreso de los pacientes en él, y se muestra el mensaje "Capítulo eliminado." |
+| **RF-16** | Crear simulación | El sistema deberá permitir al administrador **crear** la simulación de un capítulo, con contexto, pregunta, un personaje opcional y entre 2 y 4 opciones con su consecuencia, para que el paciente tome una decisión al final del capítulo. | Administrador | Estar autenticado como administrador y que el capítulo todavía no tenga simulación (máximo una por capítulo). | 1. Accede a "Gestión de simulaciones".<br>2. Presiona "Nueva simulación".<br>3. Elige el capítulo y, si quiere, el personaje.<br>4. Escribe el contexto, la pregunta y de 2 a 4 opciones con su consecuencia.<br>5. Presiona "Guardar". | La simulación y sus opciones se guardan juntas, en una sola transacción, y se muestra el mensaje "Simulación creada." Si el capítulo ya tiene una simulación, se muestra un mensaje de error y no se guarda nada. |
+| **RF-17** | Editar simulación | El sistema deberá permitir al administrador **editar** el contexto, la pregunta, el personaje y las opciones de una simulación (modificar, agregar o quitar opciones, siempre entre 2 y 4), para ajustar el escenario de decisión. | Administrador | Estar autenticado como administrador y que la simulación exista. | 1. Accede a "Gestión de simulaciones".<br>2. Presiona "Editar" en la simulación.<br>3. Modifica los datos precargados y, si quiere, presiona "Agregar opción" o "Quitar".<br>4. Presiona "Guardar". | La simulación y sus opciones se actualizan y se muestra el mensaje "Simulación actualizada." |
+| **RF-18** | Eliminar simulación | El sistema deberá permitir al administrador **eliminar** una simulación, previa confirmación, para retirar un escenario de decisión que ya no corresponde. | Administrador | Estar autenticado como administrador y que la simulación exista. | 1. Accede a "Gestión de simulaciones".<br>2. Presiona "Eliminar" en la simulación.<br>3. Confirma en el cuadro de diálogo. | La simulación se elimina junto con sus opciones y las decisiones que tomaron los pacientes, y se muestra el mensaje "Simulación eliminada." |
+| **RF-19** | Crear recurso multimedia | El sistema deberá permitir al administrador **crear** un video o audio de apoyo asociado a un capítulo, con título, descripción, enlace y duración, para complementar la lectura con ejercicios y contenido visual. | Administrador | Estar autenticado como administrador y que exista al menos un capítulo. | 1. Accede a "Gestión de recursos".<br>2. Presiona "Nuevo recurso".<br>3. Elige el tipo (video o audio) y el capítulo, y completa el título y el enlace.<br>4. Si el enlace es de YouTube, puede presionar "Completar con YouTube" para obtener el título y la duración.<br>5. Presiona "Guardar". | El recurso aparece en la lista y en los recursos del capítulo, y se muestra el mensaje "Recurso creado." Si el video de YouTube no existe, es privado o no se puede reproducir fuera de YouTube, se muestra un mensaje de error y no se guarda. |
+| **RF-20** | Editar recurso multimedia | El sistema deberá permitir al administrador **editar** los datos o el capítulo de un recurso existente, para reemplazar un enlace o corregir su información. | Administrador | Estar autenticado como administrador y que el recurso exista. | 1. Accede a "Gestión de recursos".<br>2. Presiona "Editar" en el recurso.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El recurso se actualiza y se muestra el mensaje "Recurso actualizado." Un video de YouTube se vuelve a verificar al guardar. |
+| **RF-21** | Eliminar recurso multimedia | El sistema deberá permitir al administrador **eliminar** un recurso, previa confirmación, para retirar contenido que ya no corresponde publicar. | Administrador | Estar autenticado como administrador y que el recurso exista. | 1. Accede a "Gestión de recursos".<br>2. Presiona "Eliminar" en el recurso.<br>3. Confirma en el cuadro de diálogo. | El recurso deja de aparecer en el capítulo y se muestra el mensaje "Recurso eliminado." |
+| **RF-22** | Programar recordatorio de lectura | El sistema deberá permitir al paciente **programar** un recordatorio diario de lectura a la hora que elija, para retomar la historia aunque pase días sin abrir la aplicación. | Usuario/Paciente | Tener sesión iniciada y un navegador que permita notificaciones. | 1. Accede a "Perfil".<br>2. Activa "Recordarme leer cada día" y permite las notificaciones del navegador.<br>3. Elige la "Hora del aviso". | Se muestra el mensaje "Te recordaremos leer todos los días a las HH:MM." y cada día, a esa hora, llega la notificación "¿Seguimos con la historia?" mientras la aplicación esté abierta. |
+| **RF-23** | Leer sin conexión | El sistema deberá permitir al paciente **leer** sin conexión los libros y capítulos que ya abrió, para continuar la lectura cuando se corta el internet, por ejemplo en el hospital. | Usuario/Paciente | Tener sesión iniciada y haber abierto antes el capítulo con conexión. | 1. Pierde la conexión a internet.<br>2. Abre un libro o un capítulo que ya había abierto. | Se muestra el aviso "Sin conexión. Puedes seguir leyendo los capítulos que ya abriste." y el capítulo se lee desde la copia guardada en el dispositivo. Si nunca lo abrió, se indica que todavía no está guardado. La copia se borra al cerrar sesión. |
 
 ---
 
 ### Funcionalidades Transversales
 
-Las siguientes funcionalidades son necesarias para el funcionamiento general de la aplicación pero no forman parte de los siete requerimientos funcionales principales.
+Las siguientes funcionalidades son necesarias para el funcionamiento general de la aplicación pero no forman parte de los requerimientos funcionales principales.
 
 - **FT-01:** El sistema deberá permitir a un visitante **registrarse** como paciente (`/register`), para acceder a los libros con una cuenta propia.
 - **FT-02:** El sistema deberá permitir a los usuarios **iniciar sesión** con su correo y contraseña (`/login`), para acceder a las funciones de su rol.
 - **FT-03:** El sistema deberá permitir **cerrar** la sesión activa (desde "Perfil" o el menú lateral), para proteger la cuenta en dispositivos compartidos.
 - **FT-04:** El sistema deberá **restringir** las funcionalidades según el rol del usuario autenticado (Usuario/Paciente o Administrador), para que cada usuario acceda solo a lo que le corresponde.
+
+### Matriz de trazabilidad
+
+Relaciona cada requerimiento con la pantalla que lo cumple, el endpoint de la API que usa y la prueba que lo verifica. Los números de Insomnia son las carpetas de la colección (ver [Pruebas con Insomnia](#pruebas-con-insomnia)); los endpoints van después de `/api`.
+
+| Requerimiento | Pantalla (ruta) | Endpoint de la API | Prueba |
+| :--- | :--- | :--- | :--- |
+| RF-01 Crear libro | `/admin/books/create` | `POST /libros` | Insomnia 2 |
+| RF-02 Editar libro | `/admin/books/:id/edit` | `PUT /libros/:id` | Insomnia 2 |
+| RF-03 Eliminar libro | `/admin/books` | `DELETE /libros/:id` | Insomnia 2 |
+| RF-04 Leer capítulo | `/app/home`, `/app/books/:id`, `/app/chapters/:id` | `GET /libros`, `GET /capitulos/:id`, `PUT /progreso/capitulos/:id` | Insomnia 3 y 7 (`409` si el capítulo anterior no está completado) |
+| RF-05 Iniciar simulación | `/app/simulation/:id` | `GET /simulaciones/:id` | Insomnia 5 |
+| RF-06 Tomar decisión | `/app/decision/:id` | `PUT /decisiones/:simulacionId` | Insomnia 8 |
+| RF-07 Reproducir recurso multimedia | `/app/resources`, `/app/chapters/:id/resources` | `GET /recursos` | Insomnia 6 |
+| RF-08 Consultar progreso propio | `/app/progress` | `GET /progreso` | Insomnia 7 |
+| RF-09 Consultar resumen de la plataforma | `/admin` | `GET /estadisticas` | Insomnia 9 |
+| RF-10 Crear personaje | `/admin/characters/create` | `POST /personajes` | Insomnia 4 |
+| RF-11 Editar personaje | `/admin/characters/:id/edit` | `PUT /personajes/:id` | Insomnia 4 |
+| RF-12 Eliminar personaje | `/admin/characters` | `DELETE /personajes/:id` | Insomnia 4 |
+| RF-13 Crear capítulo | `/admin/chapters/create` | `POST /capitulos` | Insomnia 3 |
+| RF-14 Editar capítulo | `/admin/chapters/:id/edit` | `PUT /capitulos/:id` | Insomnia 3 |
+| RF-15 Eliminar capítulo | `/admin/chapters` | `DELETE /capitulos/:id` | Insomnia 3 |
+| RF-16 Crear simulación | `/admin/simulations/create` | `POST /simulaciones` (con sus opciones, en una transacción) | Insomnia 5 |
+| RF-17 Editar simulación | `/admin/simulations/:id/edit` | `PUT /simulaciones/:id` y `POST`, `PUT` o `DELETE /simulaciones/:id/opciones` | Insomnia 5 |
+| RF-18 Eliminar simulación | `/admin/simulations` | `DELETE /simulaciones/:id` | Insomnia 5 |
+| RF-19 Crear recurso multimedia | `/admin/resources/create` | `POST /recursos`, `GET /youtube/video` | Insomnia 6, 12 y 13 |
+| RF-20 Editar recurso multimedia | `/admin/resources/:id/edit` | `PUT /recursos/:id`, `GET /youtube/video` | Insomnia 6 y 12 |
+| RF-21 Eliminar recurso multimedia | `/admin/resources` | `DELETE /recursos/:id` | Insomnia 6 |
+| RF-22 Programar recordatorio de lectura | `/app/profile` | No usa la API: la preferencia se guarda en el dispositivo | Vitest `reminderService.test.ts` |
+| RF-23 Leer sin conexión | `/app/books/:id`, `/app/chapters/:id` | Copia local de las respuestas de `GET /libros`, `/capitulos`, `/simulaciones`, `/personajes` y `/progreso` | Vitest `offlineCache.test.ts` |
+| FT-01 Registrarse | `/register` | `POST /auth/register` | Insomnia 1 |
+| FT-02 Iniciar sesión | `/login` | `POST /auth/login` | Insomnia 1 y 11, Cypress |
+| FT-03 Cerrar sesión | `/app/profile` y menú lateral | No usa la API: borra el token y la copia local | Vitest `api.test.ts` y `offlineCache.test.ts` |
+| FT-04 Restringir por rol | Guardias `PrivateRoute`, `RoleRoute` y `PublicOnlyRoute` | `verificarToken` y `permitirRoles` en las rutas de la API | Insomnia 1 a 7, 9 y 13 (`401` y `403`), Cypress |
 
 ---
 
@@ -303,6 +418,8 @@ El acceso al último capítulo leído deberá lograrse en un máximo de 3 clics 
 #### RNF-ACC-01 — Accesibilidad visual
 
 La interfaz deberá mantener un contraste de colores WCAG AA (mínimo 4.5:1) [[8]](#referencias) y usar botones de alrededor 48 px de alto. Se validará con herramientas automatizadas como WAVE.
+
+**Validación (EF2):** Lighthouse da 100 en accesibilidad en las 5 pantallas medidas. Ver [Mejoras de UI/UX y rendimiento (EF2)](#mejoras-de-uiux-y-rendimiento-ef2).
 
 ---
 
@@ -374,7 +491,6 @@ La aplicación considera rutas públicas, una ruta común y rutas protegidas. La
 | `/app/resources` | Recursos | Todos los recursos multimedia de apoyo. |
 | `/app/progress` | Mi progreso | Seguimiento de progreso y estadísticas propias. |
 | `/app/profile` | Perfil | Datos de la cuenta y cierre de sesión. |
-| `/app/characters` | Personajes | Galería de personajes (planificada; la API ya ofrece `GET /api/personajes`). |
 
 #### Rutas protegidas del Administrador
 
@@ -388,14 +504,16 @@ La aplicación considera rutas públicas, una ruta común y rutas protegidas. La
 | `/admin/characters/create` | Crear personaje | Creación de un personaje y asociación a un capítulo. |
 | `/admin/characters/:id/edit` | Editar personaje | Edición de un personaje existente. |
 | `/admin/chapters` | Gestión de capítulos | Capítulos del libro elegido con acciones editar y eliminar. |
-| /admin/chapters/create | Crear capítulo | Creación de un capítulo; si no se indica el número, se usa el siguiente. |
-| /admin/chapters/:id/edit | Editar capítulo | Edición de un capítulo existente. |
-| /admin/simulations/create | Crear simulación | Creación de una simulación con 2 a 4 opciones de decisión. |
-| /admin/simulations/:id/edit | Editar simulación | Edición de la simulación y de sus opciones. |
-| /admin/resources | Gestión de recursos | Videos y audios de apoyo con acciones editar y eliminar. |
-| /admin/resources/create | Crear recurso | Creación de un recurso asociado a un capítulo. |
-| /admin/resources/:id/edit | Editar recurso | Edición de un recurso existente. |
-| `/admin/progress` | Estadísticas | Planificada. La API ya ofrece `GET /api/estadisticas/pacientes`. |
+| `/admin/chapters/create` | Crear capítulo | Creación de un capítulo; si no se indica el número, se usa el siguiente. |
+| `/admin/chapters/:id/edit` | Editar capítulo | Edición de un capítulo existente. |
+| `/admin/simulations` | Gestión de simulaciones | Simulaciones de todos los libros con acciones editar y eliminar. |
+| `/admin/simulations/create` | Crear simulación | Creación de una simulación con 2 a 4 opciones de decisión. |
+| `/admin/simulations/:id/edit` | Editar simulación | Edición de la simulación y de sus opciones. |
+| `/admin/resources` | Gestión de recursos | Videos y audios de apoyo con acciones editar y eliminar. |
+| `/admin/resources/create` | Crear recurso | Creación de un recurso asociado a un capítulo, con el botón *Completar con YouTube*. |
+| `/admin/resources/:id/edit` | Editar recurso | Edición de un recurso existente. |
+
+**Fuera del alcance de la Entrega Final (trabajo futuro):** una galería de personajes para el paciente (`/app/characters`) y una pantalla de avance por paciente para el administrador (`/admin/progress`). No corresponden a ningún requerimiento funcional, ya que el paciente conoce a cada personaje en su simulación (RF-05), y el administrador ve el uso general de la plataforma en su panel (RF-09). La API ya ofrece `GET /api/personajes` y `GET /api/estadisticas/pacientes`, así que se podrían agregar más adelante sin cambiar el backend.
 
 ### 2. Relaciones jerárquicas entre vistas
 La aplicación se organiza mediante una estructura jerárquica en la que las funcionalidades disponibles dependen del rol del usuario autenticado.
@@ -519,6 +637,17 @@ La aplicación controla el acceso a las diferentes funcionalidades de acuerdo co
 | **RF-10: Crear personaje** | Sin acceso | Acceso total |
 | **RF-11: Editar personaje** | Sin acceso | Acceso total |
 | **RF-12: Eliminar personaje** | Sin acceso | Acceso total |
+| **RF-13: Crear capítulo** | Sin acceso | Acceso total |
+| **RF-14: Editar capítulo** | Sin acceso | Acceso total |
+| **RF-15: Eliminar capítulo** | Sin acceso | Acceso total |
+| **RF-16: Crear simulación** | Sin acceso | Acceso total |
+| **RF-17: Editar simulación** | Sin acceso | Acceso total |
+| **RF-18: Eliminar simulación** | Sin acceso | Acceso total |
+| **RF-19: Crear recurso multimedia** | Sin acceso | Acceso total |
+| **RF-20: Editar recurso multimedia** | Sin acceso | Acceso total |
+| **RF-21: Eliminar recurso multimedia** | Sin acceso | Acceso total |
+| **RF-22: Programar recordatorio de lectura** | Acceso total | No aplica |
+| **RF-23: Leer sin conexión** | Acceso total | No aplica |
 
 ---
 
@@ -533,6 +662,8 @@ Podrá:
 - participar en simulaciones y tomar decisiones
 - reproducir recursos multimedia de apoyo
 - consultar su propio progreso
+- activar un recordatorio diario de lectura
+- seguir leyendo sin conexión los capítulos que ya abrió
 - revisar su perfil y cerrar sesión
 
 ---
@@ -545,6 +676,9 @@ Podrá:
 
 - gestionar libros (crear, editar, eliminar)
 - gestionar personajes y asociarlos a capítulos
+- gestionar los capítulos de cada libro
+- gestionar simulaciones con sus opciones de decisión
+- gestionar recursos multimedia (videos y audios), con verificación de los videos de YouTube
 - revisar la navegación de capítulos y probar simulaciones
 - reproducir recursos multimedia
 - consultar un resumen global de la plataforma (libros, capítulos, personajes y pacientes registrados)
@@ -612,7 +746,7 @@ Presiona "Continuar leyendo" o vuelve al inicio
 
 **Rol:** Administrador
 
-**Objetivo:** registrar un nuevo libro y los personajes que participarán en sus simulaciones.
+**Objetivo:** registrar un nuevo libro con sus capítulos, personajes, simulaciones y recursos de apoyo.
 
 ```text
 Inicio de sesión (/login)
@@ -621,7 +755,13 @@ Accede al panel de administración (/admin)
       ↓
 Crea el libro base (/admin/books/create)
       ↓
+Agrega los capítulos del libro (/admin/chapters/create)
+      ↓
 Crea un personaje y lo asocia a un capítulo (/admin/characters/create)
+      ↓
+Crea la simulación del capítulo con sus opciones (/admin/simulations/create)
+      ↓
+Agrega videos o audios de apoyo (/admin/resources/create)
       ↓
 Guarda y revisa el resultado en la vista del paciente (/app/home)
 
@@ -685,6 +825,7 @@ Las validaciones de ruta (`PrivateRoute`, `RoleRoute`, `PublicOnlyRoute`) actúa
   | Error | Rojo `#B3261E` | 6.5:1 |
   | Fondo | Lavanda claro `#FAF8FD` | — |
   | Texto | `#1F1B2D` | — |
+  | Texto secundario | Gris violáceo `#5F5A6B` | 6.6:1 |
 
 - **Tipografía:** Sans-serif limpia (Inter o Roboto). Tamaño base de 16px y lectura de capítulos a 18px.
 - **Coherencia e Iconografía:** Uso exclusivo de Ionicons [[10]](#referencias). Sistema de espaciado basado en múltiplos de 8px. Botones de alrededor de 48px de alto y esquinas redondeadas.
@@ -711,6 +852,93 @@ Las mismas reglas de alias, correo y contraseña se validan en el backend (`back
 - Retroalimentación al enviar: indicador de carga en el botón y `IonToast` de éxito al crear la cuenta.
 - Reglas de seguridad de la contraseña visibles, con check verde al cumplirse.
 - Error de inicio de sesión ("Correo o contraseña incorrectos.") para no revelar qué correos están registrados.
+
+### Mejoras de UI/UX y rendimiento (EF2)
+
+La aplicación se midió con Lighthouse [[30]](#referencias) en Edge, en una ventana InPrivate, sobre la versión compilada que sirve Docker (`http://localhost:8080`). Las mediciones de "antes" corresponden al commit `09b59f9`, previo a estas mejoras. Además, todas las pantallas se revisaron a mano en anchos de 360, 390, 768, 1280 y 1920 px (RNF-COM-01).
+
+**Mejoras respecto de las entregas anteriores**
+
+| Mejora | Dónde | Para qué |
+| :--- | :--- | :--- |
+| Carga diferida por sección: el login ya no descarga las pantallas del paciente ni las del administrador | `routes/lazySections.tsx` | Menos JavaScript en la primera carga |
+| Los componentes de Ionic que la aplicación no usa quedan fuera del build | `vite.config.ts` | Menos JavaScript en la primera carga |
+| Zoom permitido (antes estaba bloqueado) e idioma `es` en la página | `index.html` | Ampliar la pantalla con baja visión [[31]](#referencias); lectores de pantalla en español |
+| Contraste AA en textos secundarios, botones de segmento y opciones de una decisión tomada | `theme/` | Cumplir el RNF-ACC-01 (mínimo 4.5:1) |
+| Barras de avance con nombre accesible y títulos en orden | Inicio, detalle del libro y recursos | Lectores de pantalla |
+| Descripción de la aplicación y `robots.txt` válido | `index.html`, `public/` | SEO |
+| Pantallas de administración de capítulos, simulaciones y recursos con el mismo diseño de tarjetas que libros y personajes | `/admin/*` | Consistencia visual |
+| Botón *Completar con YouTube* con vista previa del video | Formulario de recursos | Menos escritura y menos errores |
+| Aviso sin conexión, aviso de capítulo desbloqueado y recordatorio de lectura | Paciente | Retroalimentación clara |
+
+**Lighthouse (antes → después)**
+
+| Página | Dispositivo | Rendimiento | Accesibilidad | Buenas prácticas | SEO |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `/login` | Móvil | 82 → 85 | 94 → **100** | 100 → 100 | 82 → **100** |
+| `/login` | Escritorio | 99 → 100 | 94 → **100** | 100 → 100 | 82 → **100** |
+| `/app/home` | Móvil | 84 → 90 | 87 → **100** | 100 → 100 | 82 → **100** |
+| `/app/decision/1` | Móvil | 86 → 89 | 90 → **100** | 100 → 100 | 82 → **100** |
+| `/admin/resources/create` | Escritorio | 100 → 100 | 90 → **100** | 100 → 100 | 82 → **100** |
+
+El rendimiento de `/login` se midió cargando todo desde cero. Las otras tres páginas se midieron con la sesión iniciada (sin borrar el almacenamiento del navegador), así que su rendimiento es referencial; en ellas lo que se compara es la accesibilidad, las buenas prácticas y el SEO.
+
+**Tiempos de carga de `/login` en móvil** (Lighthouse simula una red 4G lenta y un procesador 4 veces más lento)
+
+| Métrica | Antes | Después |
+| :--- | :---: | :---: |
+| First Contentful Paint | 3.4 s | 3.2 s |
+| Largest Contentful Paint | 3.5 s | 3.4 s |
+| Total Blocking Time | 140 ms | **70 ms** |
+| Cumulative Layout Shift | 0 | 0 |
+| Speed Index | 3.4 s | 3.2 s |
+
+**Cómo se mejoró el rendimiento**
+- **Carga diferida por sección** (`frontend/src/routes/lazySections.tsx`): las pantallas del paciente y las del administrador van en archivos aparte, que se descargan al iniciar sesión según el rol. Se dividió por sección y no por pantalla para que la lectura sin conexión (EF1) siga funcionando al cambiar de pantalla. La sección se descarga antes de navegar, así la transición de Ionic no queda en blanco; si la descarga falla, se muestra un mensaje con el botón *Reintentar*.
+- **Componentes de Ionic sin usar** (`frontend/vite.config.ts`): `@ionic/react` incluía en el build todos sus componentes. Ahora quedan fuera los que la aplicación no usa, como el calendario, el deslizador, el refresco y el botón flotante.
+- **Resultado:** el JavaScript que descarga el login pasó de 342 KB a 269 KB comprimido (−21 %) y el tiempo de bloqueo (*Total Blocking Time*) bajó a la mitad.
+
+**Revisión responsive**
+
+| Pantallas | Anchos | Resultado |
+| :--- | :--- | :--- |
+| Paciente: login, registro, inicio, libro, capítulo, simulación, decisión, recursos, progreso y perfil | 360, 390, 768, 1280 y 1920 px | Sin desbordes ni textos cortados; botones de 48 px de alto; barra inferior en móvil y menú lateral desde 992 px |
+| Administrador: panel, y listas y formularios de libros, personajes, capítulos, simulaciones y recursos | 360, 390, 768, 1280 y 1920 px | Sin desbordes ni textos cortados; formularios en una columna centrada |
+
+| Móvil (390 px) | Web (1280 px) |
+| :---: | :---: |
+| <img src="img/ef2/inicio-movil.png" alt="Pantalla de inicio del paciente en móvil, con la barra de pestañas abajo" width="240"> | <img src="img/ef2/inicio-web.png" alt="Pantalla de inicio del paciente en web, con el menú lateral fijo" width="560"> |
+
+**Login en móvil, antes y después**
+
+![Lighthouse del login en móvil antes de las mejoras: 82, 94, 100 y 82](img/ef2/antes-1-login-movil.png)
+
+![Lighthouse del login en móvil después de las mejoras: 85, 100, 100 y 100](img/ef2/despues-1-login-movil.png)
+
+![Métricas de carga del login en móvil antes de las mejoras](img/ef2/antes-1-login-movil-metricas.png)
+
+![Métricas de carga del login en móvil después de las mejoras](img/ef2/despues-1-login-movil-metricas.png)
+
+<details>
+<summary>Resto de las capturas de Lighthouse</summary>
+
+![Login en escritorio, antes](img/ef2/antes-2-login-escritorio.png)
+
+![Login en escritorio, después](img/ef2/despues-2-login-escritorio.png)
+
+![Inicio del paciente en móvil, antes](img/ef2/antes-3-inicio-movil.png)
+
+![Inicio del paciente en móvil, después](img/ef2/despues-3-inicio-movil.png)
+
+![Decisión en móvil, antes](img/ef2/antes-4-decision-movil.png)
+
+![Decisión en móvil, después](img/ef2/despues-4-decision-movil.png)
+
+![Formulario de recursos del administrador en escritorio, antes](img/ef2/antes-5-admin-recurso-escritorio.png)
+
+![Formulario de recursos del administrador en escritorio, después](img/ef2/despues-5-admin-recurso-escritorio.png)
+
+</details>
 
 ---
 ## Backend y API REST (EP2)
@@ -829,7 +1057,76 @@ erDiagram
 - **CHECK:** largo mínimo del alias, del título y de la sinopsis; rol `patient` o `admin`; tipo de recurso `video` o `audio`; número de capítulo y duración positivos.
 - **Clave foránea compuesta** en `decisiones (opcion_id, simulacion_id)`: garantiza que la opción elegida pertenece a esa simulación.
 - **Claves primarias compuestas** en `progreso_capitulos` y `decisiones`: un registro por paciente y capítulo, y una decisión por paciente y simulación.
+- **Índices** en las claves foráneas que se usan para filtrar, contar y borrar en cascada. Ver [Optimización de consultas (EF4)](#optimización-de-consultas-ef4).
 - Las contraseñas de los usuarios de prueba están guardadas como hash de bcrypt, nunca en texto plano.
+
+### Optimización de consultas (EF4)
+
+Las consultas de la API están en `backend/src/services/`. Se escribieron para que PostgreSQL haga el trabajo y la respuesta lleve solo lo necesario:
+
+| Práctica | Dónde se ve |
+| :--- | :--- |
+| **Filtros en SQL**, no en JavaScript: las listas aceptan `?libro_id=` o `?capitulo_id=` y se filtran con `WHERE` | `GET /capitulos`, `/personajes`, `/simulaciones` y `/recursos` |
+| **Relaciones con `JOIN`** en una sola consulta, sin una consulta extra por cada fila | Un recurso trae su capítulo y su libro; el progreso trae los libros, los capítulos y las decisiones del paciente en una consulta |
+| **Totales calculados por PostgreSQL** con `COUNT` | `total_capitulos`, `total_recursos`, `total_opciones` y las estadísticas del panel |
+| **Listas livianas:** la lista no trae el contenido largo; el detalle sí | La lista de capítulos no trae `contenido`; la de simulaciones trae `total_opciones` en vez de las opciones |
+| **Sin datos sensibles ni innecesarios** | `password_hash` solo se lee para comparar en el login y nunca se envía; la lista de pacientes del panel no incluye correos |
+| **Transacciones** en las operaciones de varios pasos | Crear una simulación con sus opciones; reiniciar el progreso de un libro |
+| **Respuestas consistentes** | Siempre `{ data }` o `{ error, detalles }`; los errores de PostgreSQL se traducen a mensajes claros |
+| **Respuestas comprimidas** | En Docker, nginx comprime con gzip el JSON de la API y los archivos del frontend |
+
+**Índices**
+
+PostgreSQL crea un índice para cada clave primaria y cada `UNIQUE`, pero no para las claves foráneas [[33]](#referencias). Sin índice, buscar las opciones de una simulación o borrar un capítulo obliga a recorrer tablas completas. Por eso `database.sql` agrega 7 índices:
+
+| Índice | Columnas | Para qué |
+| :--- | :--- | :--- |
+| `idx_opciones_simulacion` | `opciones_simulacion (simulacion_id)` | Opciones de una simulación y `total_opciones` |
+| `idx_recursos_capitulo` | `recursos (capitulo_id)` | Recursos de un capítulo y `total_recursos` |
+| `idx_personajes_capitulo` | `personajes (capitulo_id)` | Personajes de un capítulo |
+| `idx_simulaciones_personaje` | `simulaciones (personaje_id)` | Al borrar un personaje, dejar sus simulaciones sin personaje |
+| `idx_progreso_capitulo` | `progreso_capitulos (capitulo_id)` | Al borrar un capítulo, borrar el progreso de los pacientes |
+| `idx_decisiones_simulacion` | `decisiones (simulacion_id)` | Al borrar una simulación, borrar sus decisiones |
+| `idx_decisiones_opcion` | `decisiones (opcion_id, simulacion_id)` | Al borrar una opción, borrar las decisiones que la eligieron |
+
+Las demás búsquedas ya tenían índice. Por ejemplo, los capítulos de un libro usan el de `UNIQUE (libro_id, numero)` y el progreso de un paciente usa su clave primaria `(usuario_id, capitulo_id)`.
+
+**Medición con `EXPLAIN ANALYZE`** [[32]](#referencias)
+
+Con los datos de prueba (11 capítulos) las tablas son tan pequeñas que PostgreSQL las recorre completas y no se nota la diferencia. Por eso el script [`backend/database/rendimiento-ef4.sql`](backend/database/rendimiento-ef4.sql) carga datos a mayor escala (200 libros, 20.000 capítulos, 80.000 opciones, 60.000 recursos, 2.000 pacientes y 100.000 decisiones), mide las consultas de la API sin los 7 índices y con ellos, y muestra la comparación. Todo ocurre dentro de una transacción que se deshace al final (`ROLLBACK`), así que la base de datos queda igual.
+
+Para ejecutarlo con Docker (PowerShell, desde la raíz del repositorio):
+
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    docker compose cp backend/database/rendimiento-ef4.sql db:/tmp/rendimiento-ef4.sql
+    docker compose exec db psql -U postgres -d libros_interactivos -f /tmp/rendimiento-ef4.sql
+
+| # | Consulta del script | Endpoint de la API |
+| :--- | :--- | :--- |
+| 1 | Opciones de una simulación | `GET /simulaciones/:id` |
+| 2 | Simulaciones de un libro y sus opciones | `GET /simulaciones?libro_id=` |
+| 3 | Capítulos de un libro y sus recursos | `GET /capitulos?libro_id=` |
+| 4 | Recursos de un capítulo | `GET /recursos?capitulo_id=` |
+| 5 | Personajes de un capítulo | `GET /personajes?capitulo_id=` |
+| 6 | Borrar una opción ya elegida | `DELETE /simulaciones/:id/opciones/:opcionId` |
+| 7 | Borrar un capítulo leído | `DELETE /capitulos/:id` |
+
+Resultado en PostgreSQL 18 (Docker), en milisegundos, mediana de 3 mediciones:
+
+| # | Consulta | Antes | ms | Después | ms | Más rápida |
+| :--- | :--- | :--- | ---: | :--- | ---: | ---: |
+| 1 | Opciones de una simulación | Seq Scan | 4.140 | Index Scan · `idx_opciones_simulacion` | 0.061 | 68x |
+| 2 | Simulaciones de un libro y sus opciones | Seq Scan | 546.495 | Index Only Scan · `idx_opciones_simulacion` | 3.570 | 153x |
+| 3 | Capítulos de un libro y sus recursos | Seq Scan | 368.537 | Bitmap Heap Scan · `idx_recursos_capitulo` | 3.546 | 104x |
+| 4 | Recursos de un capítulo | Seq Scan | 3.402 | Bitmap Heap Scan · `idx_recursos_capitulo` | 0.165 | 21x |
+| 5 | Personajes de un capítulo | Seq Scan | 1.047 | Index Scan · `idx_personajes_capitulo` | 0.146 | 7x |
+| 6 | Borrar una opción ya elegida | Borrado en cascada | 5.379 | Borrado en cascada | 0.133 | 40x |
+| 7 | Borrar un capítulo leído | Borrado en cascada | 37.795 | Borrado en cascada | 0.761 | 50x |
+
+![Resultado del script rendimiento-ef4.sql en la terminal](img/ef4/rendimiento-ef4.png)
+
+Cómo leer la tabla: `Seq Scan` recorre la tabla completa; `Index Scan`, `Index Only Scan` y `Bitmap Heap Scan` usan el índice que aparece después del punto. Las consultas que más mejoran son las que cuentan opciones o recursos por cada capítulo de un libro (2 y 3): sin índice, PostgreSQL recorre la tabla completa una vez por cada capítulo.
+
 
 ### API REST
 
@@ -890,9 +1187,22 @@ sequenceDiagram
 | Ver o modificar datos de otro paciente | El progreso y las decisiones usan el id que viene en el token, nunca uno enviado por el cliente. |
 | Campos no permitidos | Los servicios solo guardan los campos esperados (por ejemplo, el registro ignora `rol`). |
 | Filtración de información | Los errores 500 no muestran detalles internos, el login usa un mensaje genérico y las estadísticas de pacientes muestran solo el alias. |
-| Cabeceras y orígenes | helmet agrega cabeceras HTTP de seguridad [[20]](#referencias), y CORS solo acepta peticiones del frontend (`CORS_ORIGIN`). |
+| Cabeceras y orígenes | helmet agrega cabeceras HTTP de seguridad a las respuestas de la API [[20]](#referencias). CORS solo acepta los orígenes de `CORS_ORIGIN` (uno o varios, separados por coma), con los métodos y encabezados que usa el frontend; si la variable falta, no acepta ninguno y nunca responde "cualquier origen" (`*`). |
+| XSS (código escondido en un texto) | Los textos se guardan tal cual y React los muestra siempre como texto, nunca como HTML: el frontend no usa `dangerouslySetInnerHTML` [[35]](#referencias). Los enlaces de los recursos solo pueden ser videos de YouTube o archivos de audio o video de `/media/` o con `https://`; un enlace `javascript:` o `data:` responde `400`. |
+| Scripts de otros sitios y clickjacking | En Docker, nginx envía una política de seguridad de contenido (CSP) [[34]](#referencias): el navegador solo ejecuta los archivos `.js` de la aplicación, solo muestra videos de `youtube-nocookie.com` y no deja que otro sitio muestre la aplicación dentro de un iframe. También envía `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy` (`frontend/security-headers.conf`). Para que la CSP no necesite excepciones se quitó `@vitejs/plugin-legacy`, que agregaba scripts dentro del HTML para navegadores antiguos en los que Ionic ya no funciona. |
+| Robo del token en el navegador | El token vence en 2 horas y se borra al cerrar sesión o cuando la API responde `401`. La CSP impide que un script inyectado se ejecute y pueda leerlo. |
+| Peticiones enormes | El cuerpo JSON acepta hasta 100 KB, más que el capítulo más largo permitido; uno más grande responde `413`. |
+| Creación masiva de cuentas | Máximo 20 cuentas nuevas por hora desde la misma IP (`429`). Los registros rechazados no suman, así un grupo de pacientes del mismo hospital puede registrarse. |
+| Contenido sin cifrar | Los audios y videos de otros sitios deben usar `https://`. |
 | Operaciones a medias | Se usan transacciones al crear una simulación con sus opciones y al reiniciar el progreso de un libro. |
+| Uso indebido de la clave de YouTube | Solo el administrador puede consultar `/api/youtube`. La clave está en `.env`, restringida a la YouTube Data API v3 en Google Cloud, y viaja en un encabezado, no en la URL. |
 | Secretos en el repositorio | `.env` está en `.gitignore`. Solo se sube `.env.example`, con valores de ejemplo. |
+
+**Pruebas de seguridad (EF3):** la carpeta **13. Seguridad (EF3)** de la colección de Insomnia prueba una inyección SQL en el login y en un filtro, un texto con `<script>` y `DROP TABLE` que se guarda como texto sin dañar la tabla, enlaces `javascript:` y `http://` rechazados, un token sin firma (`alg: none`) rechazado, que el perfil no devuelva `password_hash` y que un sitio no permitido no reciba permiso de CORS. Además, con la CSP activa, un `<script>` o un atributo `onerror` agregados a la página no se ejecutan, y un script de otro sitio no se descarga.
+
+![Carpeta 13. Seguridad (EF3) en el Collection Runner de Insomnia](img/ef3/insomnia-seguridad.png)
+
+![Cabeceras de seguridad que envía nginx, vistas en DevTools](img/ef3/cabeceras-nginx.png)
 
 ### Integración con el frontend
 
@@ -925,9 +1235,71 @@ sequenceDiagram
 
 ![Decisión tomada en la aplicación guardada en la tabla decisiones](backend/docs/evidencias/pgadmin-decisiones.png)
 
+### Servicio externo: YouTube Data API (EF5)
+
+Casi todos los recursos multimedia de la aplicación son videos de YouTube. Para que el administrador no deje enlaces rotos ni tenga que escribir la duración a mano, la API se integra con la **YouTube Data API v3** de Google [[24]](#referencias).
+
+| Momento | Qué hace la API |
+| :--- | :--- |
+| Al crear o editar un recurso con un enlace de YouTube | Consulta el video. Si no existe, es privado o su dueño no permite reproducirlo fuera de YouTube, responde `400` y no guarda nada. Si existe, guarda su **duración real**. |
+| En el formulario de recursos, botón **Completar con YouTube** | `GET /api/youtube/video?url=...` (solo administrador) devuelve título, canal, miniatura y duración, y el formulario se completa solo. |
+| Siempre | Solo acepta enlaces que el reproductor de la app sabe usar: un video de YouTube o un archivo de audio o video (`.mp3`, `.m4a`, `.ogg`, `.wav`, `.mp4`, `.webm`). |
+
+**Cómo se maneja la integración:**
+- **Clave en variable de entorno:** `YOUTUBE_API_KEY` va en `backend/.env` (y en el `.env` de la raíz para Docker), nunca en el código. Se envía en el encabezado `X-Goog-Api-Key`, no en la URL, y en Google Cloud está restringida para usar solo la YouTube Data API v3.
+- **Errores:** si YouTube no responde en 5 segundos, se agotó la cuota o la clave no es válida, la API responde `503` con un mensaje claro y el detalle técnico queda solo en la terminal del servidor.
+- **Cuota:** cada consulta gasta 1 de las 10.000 unidades gratuitas diarias [[25]](#referencias). Los videos consultados se guardan en caché durante 1 hora para no gastar cuota repetida.
+- **Sin clave:** la aplicación sigue funcionando, pero los videos no se verifican (la API lo avisa al iniciar) y `GET /api/youtube/video` responde `503`.
+
+| Código | Cuándo |
+| :--- | :--- |
+| `200` | Se encontró el video (`GET /api/youtube/video`) |
+| `400` | El enlace no es de YouTube, el video no existe o es privado, o su dueño no permite insertarlo |
+| `401` / `403` | Sin sesión / la sesión no es de un administrador |
+| `503` | YouTube no responde, se agotó la cuota, la clave no es válida o falta `YOUTUBE_API_KEY` |
+
+El código está en `backend/src/services/youtube.service.js`, `backend/src/routes/youtube.routes.js` y `frontend/src/pages/admin/AdminResourceFormPage.tsx`. La carpeta **12** de la colección de Insomnia prueba estos casos.
+
+![El formulario de recursos completa título y duración con los datos de YouTube](img/ef5/youtube-formulario.png)
+
+![GET /api/youtube/video responde 200 con los datos del video](img/ef5/youtube-insomnia.png)
+
+### Notificaciones y almacenamiento local (EF1)
+
+El paciente suele leer en el hospital o durante su tratamiento, donde el wifi se corta y puede pasar días sin abrir la aplicación. Por eso se agregaron avisos y una copia local de la lectura.
+
+**Notificaciones**
+
+| Aviso | Cuándo aparece | Cómo funciona |
+| :--- | :--- | :--- |
+| Recordatorio de lectura | Todos los días, a la hora que el paciente elige en **Perfil** | Notificación del sistema (*¿Seguimos con la historia?*) con la API de notificaciones del navegador [[26]](#referencias). El permiso se pide solo al activarlo, si el paciente lo niega, la app explica cómo permitirlo. |
+| Capítulo desbloqueado | Al terminar un capítulo o confirmar una decisión | Aviso en pantalla, por ejemplo *Desbloqueaste el capítulo 4: Pedro, el guardián*. No aparece al releer un capítulo ya completado. |
+| Sin conexión | Cuando se pierde internet o la API no responde | Aviso bajo el encabezado: *Sin conexión. Puedes seguir leyendo los capítulos que ya abriste.* Desaparece cuando vuelve la conexión [[27]](#referencias). |
+
+**Almacenamiento local**
+
+- Cada respuesta de la API con libros, capítulos, simulaciones, personajes y progreso se guarda en `localStorage` [[28]](#referencias) (`frontend/src/services/offlineCache.ts`). Si la API no responde por falta de red, la pantalla usa la última copia guardada.
+- La copia se usa **solo sin conexión**: los errores de la API (403, 404, 409) se muestran igual que antes.
+- Si algo nunca se abrió con conexión, se muestra *Sin conexión: todavía no está guardado en tu dispositivo*, en vez de una pantalla que carga sin fin. Los videos y audios no se guardan, porque necesitan internet.
+- **Privacidad:** la copia es de cada usuario y se borra al cerrar sesión, porque el dispositivo puede ser compartido (por ejemplo, una tablet del hospital). Solo se mantiene la preferencia del recordatorio.
+- Sin conexión no se guardan decisiones ni avance: la app muestra el mensaje de error y el paciente puede intentarlo cuando vuelva internet.
+
+**Cómo probarlo**
+
+1. Como paciente, abrir un capítulo. En DevTools (F12) y **Network**, cambiar *No throttling* por **Offline**. Volver al libro y abrir el mismo capítulo: se lee desde la copia. Abrir un libro que no se haya abierto: aparece *todavía no está guardado*.
+2. En **Perfil**, activar *Recordarme leer cada día*, permitir las notificaciones y tocar **Probar notificación**. Para probar la hora, elegir un minuto después de la hora actual y esperar.
+
+**Limitaciones (trabajo futuro):** no hay *service worker*, así que la aplicación debe haberse abierto con conexión (recargar la página sin internet no funciona). El recordatorio llega mientras la aplicación esté abierta en el navegador, aunque sea en otra pestaña o minimizada. Con Capacitor y su plugin Local Notifications [[29]](#referencias), el aviso llegaría también con la aplicación cerrada.
+
+**Pruebas:** `services/offlineCache.test.ts` (7 pruebas) y `services/reminderService.test.ts` (9 pruebas) con Vitest. Se ejecutan con `npm run test.unit -- --run` dentro de `frontend/`.
+
+![Capítulo leído sin conexión, libro que todavía no está guardado, aviso de capítulo desbloqueado y recordatorio de lectura en Perfil](img/ef1/ef1-pantallas.png)
+
+![Pruebas de Vitest: 25 de 25](img/ef1/vitest-ef1.png)
+
 ### Pruebas con Insomnia
 
-La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **86 peticiones** en 12 carpetas, con los casos correctos y los de error de cada módulo, y **100 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
+La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **101 peticiones** en 14 carpetas, con los casos correctos y los de error de cada módulo, y **122 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
 
 - Las peticiones obtienen el token solas desde **Login paciente** o **Login admin**, así que no hay que copiarlo a mano.
 - Las peticiones de editar y eliminar usan el id del registro creado en la misma carpeta.
@@ -942,6 +1314,8 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 | 9. Estadísticas | Solo administrador (403 para el paciente). |
 | 10. Errores generales | Ruta inexistente, JSON mal formado e intento de inyección SQL en el id. |
 | 11. Límite de intentos de login | Cinco intentos fallidos con el mismo correo y el sexto bloqueado (429). Si se vuelve a ejecutar antes de 15 minutos, todos responden 429. |
+| 12. YouTube (servicio externo) | Datos de un video (200, o 503 sin `YOUTUBE_API_KEY`), enlace que no es de YouTube (400), paciente (403), sin sesión (401) y recurso con un enlace que no es audio, video ni YouTube (400). |
+| 13. Seguridad (EF3) | Inyección SQL en el login y en un filtro (400), texto con `<script>` y `DROP TABLE` guardado como texto, enlaces `javascript:` y `http://` (400), token sin firma (401), perfil sin `password_hash` y CORS para un sitio no permitido. |
 
 **Cómo ejecutarla:** en Insomnia, **Import** → elegir el archivo. Después, desde el menú de la colección, **Run** (Collection Runner) ejecuta todas las peticiones en orden y muestra cuántas pruebas pasaron.
 
@@ -951,9 +1325,9 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 
 ![Un paciente intenta crear un libro y la API responde 403](backend/docs/evidencias/insomnia-403.png)
 
-El frontend también tiene pruebas automáticas con Vitest (npm run test.unit -- --run dentro de frontend, 9 pruebas). frontend/src/services/api.test.ts revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
+El frontend también tiene pruebas automáticas con Vitest (`npm run test.unit -- --run` dentro de `frontend/`): 25 pruebas en 4 archivos. `frontend/src/services/api.test.ts` (8 pruebas) revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
 
-![Pruebas de los interceptores con Vitest: 9 de 9](img/ef/vitest-interceptor.png)
+![Pruebas de Vitest al agregar las de los interceptores: 9 de 9](img/ef/vitest-interceptor.png)
 ![Gestión de simulaciones en el panel de administración](img/ef/admin-simulaciones.png)
 ![Formulario de una simulación con sus opciones de decisión](img/ef/admin-simulaciones-form.png)
 
@@ -979,7 +1353,7 @@ El frontend también tiene pruebas automáticas con Vitest (npm run test.unit --
 | `pg` | ^8.23.1 | Conexión a PostgreSQL y consultas con parámetros [[19]](#referencias). |
 | `bcryptjs` | ^3.0.3 | Encriptación de contraseñas [[14]](#referencias). |
 | `jsonwebtoken` | ^9.0.3 | Creación y verificación de los tokens JWT [[13]](#referencias). |
-| `express-rate-limit` | ^8.7.1 | Límite de intentos fallidos de inicio de sesión [[22]](#referencias). |
+| `express-rate-limit` | ^8.7.1 | Límite de intentos fallidos de inicio de sesión [[22]](#referencias) y de cuentas nuevas. |
 | `express-validator` | ^7.3.2 | Validación de los datos de entrada [[16]](#referencias). |
 | `helmet` | ^8.3.0 | Cabeceras HTTP de seguridad [[20]](#referencias). |
 | `cors` | ^2.8.6 | Permite que solo el frontend llame a la API. |
@@ -1007,6 +1381,7 @@ El frontend también tiene pruebas automáticas con Vitest (npm run test.unit --
 - **PostgreSQL** (base de datos relacional)
 - **JWT + bcrypt** (autenticación y contraseñas)
 - **Insomnia** (pruebas de la API)
+- **YouTube Data API v3** (servicio externo: verifica los videos y obtiene su duración)
 - **Docker + Docker Compose** (despliegue local con contenedores) y **nginx** (sirve el frontend y reenvía /api)
 - **Figma** (prototipo UI/UX)
 - **Capacitor** (empaquetado móvil proyectado, Android 10+ / iOS 16.4+)
@@ -1070,6 +1445,7 @@ Luego hay que completar el archivo `.env`:
 | `CORS_ORIGIN` | URL del frontend que puede llamar a la API | `http://localhost:5173` |
 | `JWT_SECRET` | Clave secreta para firmar los tokens. **Mínimo 32 caracteres**: con una más corta o con el valor de ejemplo, el servidor no arranca | Una cadena aleatoria de 64 caracteres (ver abajo) |
 | `JWT_EXPIRES_IN` | Duración del token | `2h` |
+| `YOUTUBE_API_KEY` | Clave de la YouTube Data API v3. Opcional: sin ella, los videos de YouTube no se verifican | La que se crea en Google Cloud (APIs y servicios → Credenciales → Clave de API) |
 
 Para generar `JWT_SECRET`:
 
@@ -1171,6 +1547,7 @@ Se definen en un archivo `.env` en la raíz del repositorio, a partir de la plan
 | :--- | :--- | :--- |
 | `DB_PASSWORD` | Contraseña de PostgreSQL dentro del contenedor | Letras y números |
 | `JWT_SECRET` | Clave para firmar los tokens (mínimo 32 caracteres) | Una cadena aleatoria (ver abajo) |
+| `YOUTUBE_API_KEY` | Clave de la YouTube Data API v3 (opcional) | La misma de `backend/.env` |
 
 Para generar `JWT_SECRET` sin tener Node.js instalado:
 
@@ -1211,7 +1588,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 
 ### Evidencia de despliegue local
 
-![Docker Compose construye las imágenes y levanta los tres servicios](img/docker/docker-compose-up.png)
+![Docker Compose construye las imágenes y levanta los tres servicios](img/docker/docker-compose-ps.png)
 
 ![Docker Desktop con los contenedores db, api y frontend en ejecución](img/docker/docker-desktop.png)
 
@@ -1221,7 +1598,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 
 ![Panel de administración en la aplicación servida con Docker](img/docker/docker-app-admin.png)
 
-![Colección de Insomnia contra Docker: 100 de 100 pruebas](img/docker/docker-insomnia-runner.png)
+![Colección de Insomnia contra Docker, antes de agregar las pruebas de YouTube y de seguridad: 100 de 100 pruebas](img/docker/docker-insomnia-runner.png)
 
 ---
 
@@ -1235,7 +1612,8 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 ├── .env.example                 Variables de Docker Compose (copiar como .env)
 ├── backend/
 │   ├── database/
-│   │   └── database.sql         Tablas, restricciones y datos de prueba
+│   │   ├── database.sql         Tablas, restricciones, índices y datos de prueba
+│   │   └── rendimiento-ef4.sql  Medición de los índices con EXPLAIN ANALYZE (EF4)
 │   ├── docs/
 │   │   ├── endpoints.md         Documentación de la API
 │   │   ├── insomnia-libros-interactivos.json   Colección de pruebas
@@ -1245,35 +1623,40 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 │   │   ├── app.js               Express: helmet, CORS, JSON, rutas y manejo de errores
 │   │   ├── config/              db.js (pool de conexiones a PostgreSQL)
 │   │   ├── routes/              Rutas de cada módulo e index.js, que las une bajo /api
-│   │   ├── middlewares/         auth.js (verificarToken, permitirRoles), limiteLogin.js, validate.js, errorHandler.js
+│   │   ├── middlewares/         auth.js (verificarToken, permitirRoles), limiteLogin.js, limiteRegistro.js,
+│   │   │                        validate.js, errorHandler.js
 │   │   ├── validators/          Reglas de validación de cada módulo
 │   │   ├── controllers/         Reciben la petición y arman la respuesta
-│   │   ├── services/            Consultas SQL con parámetros
+│   │   ├── services/            Consultas SQL con parámetros y youtube.service (YouTube Data API)
 │   │   └── utils/               httpError, pgErrors (errores de PostgreSQL), transaccion
 │   ├── .env.example             Plantilla de variables de entorno
-│   ├── Dockerfile               Imagen de la API    
+│   ├── Dockerfile               Imagen de la API
 │   └── package.json
 └── frontend/
     ├── .env.example             URL de la API (opcional)
     ├── Dockerfile               Compila con Node y sirve con nginx
     ├── nginx.conf               Sirve el frontend y reenvía /api a la API
+    ├── security-headers.conf    Cabeceras de seguridad y política CSP que envía nginx (EF3)
     ├── cypress/                 Pruebas end-to-end
     └── src/
         ├── App.tsx              IonApp + IonReactRouter + IonSplitPane (menú lateral en web)
-        ├── routes/              AppRoutes (mapa de rutas) y guardias: PrivateRoute, RoleRoute, PublicOnlyRoute
+        ├── routes/              AppRoutes (mapa de rutas), guardias (PrivateRoute, RoleRoute, PublicOnlyRoute)
+        │                        y lazySections (carga diferida de las secciones)
         ├── layouts/             UserLayout (IonTabs del paciente) y AdminLayout (rutas /admin/*)
         ├── pages/
         │   ├── public/          LoginPage, RegisterPage
         │   ├── user/            Home, BookDetail, Chapter, Simulation, Decision, Resources, Progress, Profile
         │   ├── admin/           AdminHome, AdminBooks, AdminBookForm, AdminCharacters, AdminCharacterForm,
-        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,       AdminResources, AdminResourceForm
+        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,
+        │   │                    AdminResources, AdminResourceForm
         │   └── common/          Unauthorized, NotFound
         ├── components/          AppMenu, PageHeader, BookCard, ChapterListItem, DecisionOptionCard,
-        │                        MediaPlayer, AdminItemCard, EmptyState
-        ├── context/             AuthContext (usuario y rol en sesión)
+        │                        MediaPlayer, AdminItemCard, EmptyState, OfflineBanner, OfflineState, SectionLoader
         ├── services/            api (Axios e interceptores), session, mappers, authService, bookService,
-        │                        characterService, adminContentService, progressService, statsService, storage
-        ├── hooks/               usePageEnter (recarga datos al volver a una página)
+        │                        characterService, adminContentService, progressService, statsService, storage,
+        │                        offlineCache (lectura sin conexión), reminderService (recordatorio de lectura)
+        ├── hooks/               usePageEnter (recarga datos al volver a una página), useOnlineStatus,
+        │                        useReadingReminder
         ├── types/               Tipos del dominio
         ├── utils/               Validaciones de formularios
         └── theme/               Paleta (variables.css) y estilos globales (global.css)
@@ -1286,7 +1669,7 @@ Conforme a lo permitido por la pauta, el equipo utilizó asistentes de inteligen
 - **EP1:** para revisar la documentación frente a la rúbrica y generar una base inicial del código del frontend.
 - **EP2:** para guiar paso a paso la construcción del backend (servidor, base de datos, autenticación y CRUD) y generar una base del código de los módulos, de la integración con Axios, de la colección de Insomnia y de la documentación de la API.
 
-- **EF:** para guiar paso a paso las correcciones de seguridad de la API y la configuración de Docker (Dockerfiles, nginx y docker-compose), que el equipo creó, ejecutó y probó en sus equipos.
+- **EF:** para guiar paso a paso las correcciones de seguridad de la API, la configuración de Docker (Dockerfiles, nginx y docker-compose) y las mejoras EF1 a EF5: notificaciones y lectura sin conexión, carga diferida y correcciones de accesibilidad, índices y script de medición, CORS, límites y política CSP, integración con YouTube, y pruebas de Insomnia y Vitest. También para redactar y revisar la documentación del README. El equipo ejecutó y probó todo en sus equipos (Docker, Lighthouse, Insomnia y el navegador).
 
 El código fue revisado, adaptado, probado y modificado por el equipo, que también ejecutó las pruebas en Insomnia y en el navegador. Los bocetos y prototipos de Figma se construyeron manualmente.
 
@@ -1315,3 +1698,15 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 21. Vite. *Build Options: build.target*. https://vite.dev/config/build-options#build-target
 22. express-rate-limit. *Documentación*. https://www.npmjs.com/package/express-rate-limit
 23. OWASP. *Authentication Cheat Sheet* (protección contra ataques automatizados). https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+24. Google for Developers. *YouTube Data API: Videos: list*. https://developers.google.com/youtube/v3/docs/videos/list
+25. Google for Developers. *YouTube Data API: Getting Started* (cuota de uso). https://developers.google.com/youtube/v3/getting-started
+26. MDN Web Docs. *Notifications API*. https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API
+27. MDN Web Docs. *Navigator: onLine property*. https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
+28. MDN Web Docs. *Window: localStorage property*. https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+29. Capacitor. *Local Notifications Capacitor Plugin API*. https://capacitorjs.com/docs/apis/local-notifications
+30. Chrome for Developers. *Introduction to Lighthouse*. https://developer.chrome.com/docs/lighthouse/overview
+31. W3C. *Understanding Success Criterion 1.4.4: Resize Text*. https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html
+32. PostgreSQL. *Using EXPLAIN*. https://www.postgresql.org/docs/current/using-explain.html
+33. PostgreSQL. *Constraints: Foreign Keys* (índices en las columnas que hacen referencia). https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK
+34. MDN Web Docs. *Content Security Policy (CSP)*. https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+35. OWASP. *Cross Site Scripting Prevention Cheat Sheet*. https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html

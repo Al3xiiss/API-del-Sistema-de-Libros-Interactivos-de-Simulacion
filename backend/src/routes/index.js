@@ -10,6 +10,7 @@ import recursosRoutes from './recursos.routes.js';
 import progresoRoutes from './progreso.routes.js';
 import decisionesRoutes from './decisiones.routes.js';
 import estadisticasRoutes from './estadisticas.routes.js';
+import youtubeRoutes from './youtube.routes.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/recursos', recursosRoutes);
 router.use('/progreso', progresoRoutes);
 router.use('/decisiones', decisionesRoutes);
 router.use('/estadisticas', estadisticasRoutes);
+router.use('/youtube', youtubeRoutes);
 
 export default router;

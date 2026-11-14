@@ -3,7 +3,7 @@
  * El token se agrega a cada petición en el interceptor de api.ts.
  */
 import { User } from '../types';
-import { readJSON, removeKey, writeJSON } from './storage';
+import { CACHE_PREFIX, readJSON, removeKey, removeKeysWithPrefix, writeJSON } from './storage';
 
 const TOKEN_KEY = 'li.token';
 const SESSION_KEY = 'li.session';
@@ -21,4 +21,6 @@ export function saveSession(token: string, user: User): void {
 export function clearSession(): void {
   removeKey(TOKEN_KEY);
   removeKey(SESSION_KEY);
+  // La copia local de la lectura es privada: se borra al cerrar sesión, porque el dispositivo puede ser compartido.
+  removeKeysWithPrefix(CACHE_PREFIX);
 }

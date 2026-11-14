@@ -12,8 +12,10 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EmptyState from '../../components/EmptyState';
 import MediaPlayer from '../../components/MediaPlayer';
+import OfflineState from '../../components/OfflineState';
 import PageHeader from '../../components/PageHeader';
 import { getResources } from '../../services/bookService';
+import { isOfflineError } from '../../services/offlineCache';
 import { Resource } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
 
@@ -22,12 +24,17 @@ const ResourcesPage: React.FC = () => {
   const router = useIonRouter();
   const [resources, setResources] = useState<Resource[] | null>(null);
   const [current, setCurrent] = useState<Resource>();
+  const [offline, setOffline] = useState(false);
 
   usePageEnter(() => {
     setResources(null);
+    setOffline(false);
     getResources(chapterId).then((list) => {
       setResources(list);
       setCurrent(list[0]);
+    }).catch((err) => {
+      if (!isOfflineError(err)) throw err;
+      setOffline(true);
     });
   });
 
@@ -41,7 +48,13 @@ const ResourcesPage: React.FC = () => {
       />
       <IonContent className="ion-padding">
         <div className="page-container resources-layout">
-          {resources === null && (
+          {resources === null && offline && (
+            // Los videos y audios no se guardan en el dispositivo (EF1)
+            <OfflineState message="Los videos y audios necesitan internet. Puedes seguir leyendo y verlos cuando vuelva la conexión.">
+              {chapterId ? <IonButton onClick={backToChapter}>Volver al capítulo</IonButton> : undefined}
+            </OfflineState>
+          )}
+          {resources === null && !offline && (
             <div className="loading-center"><IonSpinner aria-label="Cargando recursos" /></div>
           )}
 
@@ -75,7 +88,7 @@ const ResourcesPage: React.FC = () => {
                 >
                   <IonIcon aria-hidden="true" slot="start" icon={resource.type === 'video' ? videocamOutline : headsetOutline} />
                   <IonLabel>
-                    <h3>{resource.title}</h3>
+                    <h2>{resource.title}</h2>
                     <p>{resource.type === 'video' ? 'Video' : 'Audio'} · {Math.ceil(resource.durationSeconds / 60)} min</p>
                   </IonLabel>
                 </IonItem>

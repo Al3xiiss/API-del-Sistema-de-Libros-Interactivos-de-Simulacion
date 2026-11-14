@@ -14,6 +14,16 @@ if (JWT_SECRET.length < 32 || JWT_SECRET === 'cambia_esto_por_una_clave_larga_y_
   process.exit(1);
 }
 
+// Sin CORS_ORIGIN la API funciona, pero ningún sitio web puede llamarla desde el navegador
+if (!process.env.CORS_ORIGIN) {
+  console.warn('CORS_ORIGIN no está configurada: el frontend no podrá llamar a la API desde el navegador');
+}
+
+// La integración con YouTube es opcional: sin clave, los enlaces de YouTube se guardan sin verificar
+if (!process.env.YOUTUBE_API_KEY) {
+  console.warn('YOUTUBE_API_KEY no está configurada: los videos de YouTube no se verificarán al guardar recursos');
+}
+
 try {
   await pool.query('SELECT 1');
   console.log('Conectado a PostgreSQL');

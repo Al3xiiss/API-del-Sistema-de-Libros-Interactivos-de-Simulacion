@@ -6,9 +6,11 @@ import { alertCircleOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import EmptyState from '../../components/EmptyState';
+import OfflineState from '../../components/OfflineState';
 import PageHeader from '../../components/PageHeader';
 import { getChapter, getSimulation } from '../../services/bookService';
 import { getCharacter } from '../../services/characterService';
+import { isOfflineError } from '../../services/offlineCache';
 import { Chapter, Character, Simulation } from '../../types';
 import { usePageEnter } from '../../hooks/usePageEnter';
 
@@ -17,14 +19,20 @@ const SimulationPage: React.FC = () => {
   const [simulation, setSimulation] = useState<Simulation | null | undefined>(undefined);
   const [chapter, setChapter] = useState<Chapter>();
   const [character, setCharacter] = useState<Character>();
+  const [offline, setOffline] = useState(false); // sin conexión y sin copia guardada (EF1)
 
   usePageEnter(() => {
+    setOffline(false);
     getSimulation(id!).then(async (sim) => {
       if (!sim) return setSimulation(null);
       const [ch, person] = await Promise.all([getChapter(sim.chapterId), getCharacter(sim.characterId)]);
       setChapter(ch);
       setCharacter(person);
       setSimulation(sim);
+    }).catch((err) => {
+      if (!isOfflineError(err)) throw err;
+      setSimulation(undefined);
+      setOffline(true);
     });
   });
 
@@ -36,7 +44,10 @@ const SimulationPage: React.FC = () => {
       />
       <IonContent className="ion-padding">
         <div className="reading ion-text-center">
-          {simulation === undefined && <IonSkeletonText animated className="skeleton-hero" />}
+          {simulation === undefined && !offline && <IonSkeletonText animated className="skeleton-hero" />}
+          {simulation === undefined && offline && (
+            <OfflineState message="Esta simulación todavía no está guardada en tu dispositivo. Ábrela cuando tengas internet y quedará disponible sin conexión." />
+          )}
           {simulation === null && (
             <EmptyState icon={alertCircleOutline} title="Simulación no disponible" message="Vuelve al capítulo e inténtalo de nuevo." />
           )}

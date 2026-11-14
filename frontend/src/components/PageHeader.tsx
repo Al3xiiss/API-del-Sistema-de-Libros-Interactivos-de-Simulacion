@@ -1,4 +1,5 @@
 import { IonBackButton, IonButtons, IonHeader, IonMenuButton, IonTitle, IonToolbar } from '@ionic/react';
+import OfflineBanner from './OfflineBanner';
 
 interface PageHeaderProps {
   title: string;
@@ -15,6 +16,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, backHref }) => (
       </IonButtons>
       <IonTitle>{title}</IonTitle>
     </IonToolbar>
+    {/* Bajo el título y no flotando: así nunca tapa los botones de la página (EF1) */}
+    <OfflineBanner />
   </IonHeader>
 );
 

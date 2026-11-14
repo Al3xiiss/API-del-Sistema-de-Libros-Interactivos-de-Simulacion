@@ -1,23 +1,29 @@
 /**
  * Libros, capítulos, simulaciones y recursos (RF-01 a RF-05 y RF-07).
  * EP2: cada función llama a la API REST y devuelve los mismos tipos que usaban las pantallas en la EP1.
+ * EF1: lo que se lee (libros, capítulos y simulaciones) se guarda en el dispositivo para usarlo sin conexión.
  */
 import { Book, Chapter, Resource, Simulation } from '../types';
 import { apiDelete, apiGet, apiPost, apiPut, orUndefined, path } from './api';
 import {
   CapituloApi, LibroApi, RecursoApi, SimulacionApi, toBook, toChapter, toResource, toSimulation,
 } from './mappers';
+import { withOfflineCache } from './offlineCache';
 
 // ---------- Libros ----------
 
 export async function getBooks(): Promise<Book[]> {
-  const libros = await apiGet<LibroApi[]>('/libros');
-  return libros.map(toBook);
+  return withOfflineCache('libros', async () => {
+    const libros = await apiGet<LibroApi[]>('/libros');
+    return libros.map(toBook);
+  });
 }
 
 export async function getBook(id: string): Promise<Book | undefined> {
-  const libro = await orUndefined(apiGet<LibroApi>(path('/libros', id)));
-  return libro && toBook(libro);
+  return withOfflineCache(`libro.${id}`, async () => {
+    const libro = await orUndefined(apiGet<LibroApi>(path('/libros', id)));
+    return libro && toBook(libro);
+  });
 }
 
 /** Crea (sin id) o actualiza (con id) un libro. Solo Administrador. */
@@ -35,31 +41,41 @@ export const deleteBook = (id: string) => apiDelete(path('/libros', id));
 
 /** Capítulos de un libro, ordenados por número. */
 export async function getChapters(bookId: string): Promise<Chapter[]> {
-  const capitulos = await apiGet<CapituloApi[]>('/capitulos', { libro_id: bookId });
-  return capitulos.map(toChapter);
+  return withOfflineCache(`capitulos.libro.${bookId}`, async () => {
+    const capitulos = await apiGet<CapituloApi[]>('/capitulos', { libro_id: bookId });
+    return capitulos.map(toChapter);
+  });
 }
 
 export async function getAllChapters(): Promise<Chapter[]> {
-  const capitulos = await apiGet<CapituloApi[]>('/capitulos');
-  return capitulos.map(toChapter);
+  return withOfflineCache('capitulos', async () => {
+    const capitulos = await apiGet<CapituloApi[]>('/capitulos');
+    return capitulos.map(toChapter);
+  });
 }
 
 export async function getChapter(id: string): Promise<Chapter | undefined> {
-  const capitulo = await orUndefined(apiGet<CapituloApi>(path('/capitulos', id)));
-  return capitulo && toChapter(capitulo);
+  return withOfflineCache(`capitulo.${id}`, async () => {
+    const capitulo = await orUndefined(apiGet<CapituloApi>(path('/capitulos', id)));
+    return capitulo && toChapter(capitulo);
+  });
 }
 
 // ---------- Simulaciones ----------
 
 export async function getSimulation(id: string): Promise<Simulation | undefined> {
-  const simulacion = await orUndefined(apiGet<SimulacionApi>(path('/simulaciones', id)));
-  return simulacion && toSimulation(simulacion);
+  return withOfflineCache(`simulacion.${id}`, async () => {
+    const simulacion = await orUndefined(apiGet<SimulacionApi>(path('/simulaciones', id)));
+    return simulacion && toSimulation(simulacion);
+  });
 }
 
 /** Simulaciones de un libro, para el contador "Decisión X de Y". */
 export async function getSimulations(bookId: string): Promise<Simulation[]> {
-  const simulaciones = await apiGet<SimulacionApi[]>('/simulaciones', { libro_id: bookId });
-  return simulaciones.map(toSimulation);
+  return withOfflineCache(`simulaciones.libro.${bookId}`, async () => {
+    const simulaciones = await apiGet<SimulacionApi[]>('/simulaciones', { libro_id: bookId });
+    return simulaciones.map(toSimulation);
+  });
 }
 
 // ---------- Recursos ----------

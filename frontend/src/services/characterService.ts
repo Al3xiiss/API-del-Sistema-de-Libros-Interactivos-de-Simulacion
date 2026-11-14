@@ -2,6 +2,7 @@
 import { Character } from '../types';
 import { apiDelete, apiGet, apiPost, apiPut, orUndefined, path } from './api';
 import { PersonajeApi, toCharacter } from './mappers';
+import { withOfflineCache } from './offlineCache';
 
 export async function getCharacters(): Promise<Character[]> {
   const personajes = await apiGet<PersonajeApi[]>('/personajes');
@@ -10,8 +11,11 @@ export async function getCharacters(): Promise<Character[]> {
 
 export async function getCharacter(id: string): Promise<Character | undefined> {
   if (!id) return undefined; // simulación sin personaje asignado
-  const personaje = await orUndefined(apiGet<PersonajeApi>(path('/personajes', id)));
-  return personaje && toCharacter(personaje);
+  // Se guarda una copia para poder ver la simulación sin conexión (EF1)
+  return withOfflineCache(`personaje.${id}`, async () => {
+    const personaje = await orUndefined(apiGet<PersonajeApi>(path('/personajes', id)));
+    return personaje && toCharacter(personaje);
+  });
 }
 
 export async function saveCharacter(input: Omit<Character, 'id'> & { id?: string }): Promise<void> {

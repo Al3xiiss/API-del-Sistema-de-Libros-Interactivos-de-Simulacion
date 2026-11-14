@@ -13,9 +13,10 @@ import { Book, Chapter, Resource } from '../../types';
 import { fieldClass } from '../../utils/validators';
 import { usePageEnter } from '../../hooks/usePageEnter';
 
-// Las mismas reglas que valida la API: un video de YouTube o un archivo de audio o video (en /media/ o en otro sitio).
+// Las mismas reglas que valida la API: un video de YouTube o un archivo de audio o video
+// (en /media/ o en otro sitio con https://, EF3).
 const ARCHIVO_LOCAL = /^\/media\/[a-z0-9_-]+\.(mp3|m4a|ogg|wav|mp4|webm)$/i;
-const ARCHIVO_EXTERNO = /^https?:\/\/[^\s"'<>?#]+\.(mp3|m4a|ogg|wav|mp4|webm)(\?[^\s"'<>#]*)?$/i;
+const ARCHIVO_EXTERNO = /^https:\/\/[^\s"'<>?#]+\.(mp3|m4a|ogg|wav|mp4|webm)(\?[^\s"'<>#]*)?$/i;
 const YOUTUBE = /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]{11}(?:[?&#].*)?$/i;
 
 const EMPTY = { chapterId: '', type: 'video' as Resource['type'], title: '', description: '', url: '', duration: '' };
@@ -74,7 +75,7 @@ const AdminResourceFormPage: React.FC = () => {
     title: form.title.trim().length >= 3 ? '' : 'El título debe tener al menos 3 caracteres.',
     url: url === '' || ARCHIVO_LOCAL.test(url) || ARCHIVO_EXTERNO.test(url) || YOUTUBE.test(url)
       ? ''
-      : 'Usa un video de YouTube o un archivo de audio o video (.mp3, .m4a, .ogg, .wav, .mp4 o .webm).',
+      : 'Usa un video de YouTube o un archivo de audio o video (.mp3, .m4a, .ogg, .wav, .mp4 o .webm) de /media/ o con https://.',
     duration: duration === '' || (/^\d+$/.test(duration) && Number(duration) >= 1 && Number(duration) <= 86400)
       ? ''
       : 'La duración debe ser un número entero de segundos entre 1 y 86400.',

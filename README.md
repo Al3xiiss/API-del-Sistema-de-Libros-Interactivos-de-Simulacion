@@ -7,8 +7,10 @@ Aplicación web y móvil que acompaña a pacientes en tratamiento oncológico me
 | Rama | Contenido |
 | :--- | :--- |
 | [`backend`](https://github.com/Al3xiiss/API-del-Sistema-de-Libros-Interactivos-de-Simulacion/tree/backend) | **Versión más reciente del proyecto completo:** API REST, script SQL, frontend integrado, Docker y documentación completa. |
-| [`frontend`](https://github.com/Al3xiiss/API-del-Sistema-de-Libros-Interactivos-de-Simulacion/tree/frontend) | Interfaz en Ionic + React y documentación de los requerimientos. |
+| [`frontend`](https://github.com/Al3xiiss/API-del-Sistema-de-Libros-Interactivos-de-Simulacion/tree/frontend) | Igual a `backend`: se unió con un pull request en la Entrega Final. |
 | `main` | Solo este archivo de orientación. |
+
+**Entrega Final:** etiqueta [`v1.0.0`](https://github.com/Al3xiiss/API-del-Sistema-de-Libros-Interactivos-de-Simulacion/tree/v1.0.0), que marca la versión entregada.
 
 **Documentación completa** (requerimientos, arquitectura, API, seguridad, Docker e instalación): [README de la rama backend](https://github.com/Al3xiiss/API-del-Sistema-de-Libros-Interactivos-de-Simulacion/blob/backend/README.md).
 

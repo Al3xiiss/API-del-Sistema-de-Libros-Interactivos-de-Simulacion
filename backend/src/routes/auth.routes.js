@@ -6,10 +6,11 @@ import { reglasRegistro, reglasLogin } from '../validators/auth.validators.js';
 import { validar } from '../middlewares/validate.js';
 import { verificarToken } from '../middlewares/auth.js';
 import { limiteLogin } from '../middlewares/limiteLogin.js';
+import { limiteRegistro } from '../middlewares/limiteRegistro.js';
 
 const router = Router();
 
-router.post('/register', reglasRegistro, validar, registro);
+router.post('/register', limiteRegistro, reglasRegistro, validar, registro);
 router.post('/login', limiteLogin, reglasLogin, validar, login);
 router.get('/me', verificarToken, perfil);
 

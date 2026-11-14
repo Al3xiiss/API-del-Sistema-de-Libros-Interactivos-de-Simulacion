@@ -13,6 +13,9 @@ export function errorHandler(err, req, res, next) {
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido' });
   }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'El cuerpo de la petición es demasiado grande (máximo 100 KB)' });
+  }
 
   const error = traducirErrorPg(err); // reglas de la BD (UNIQUE, FOREIGN KEY, CHECK) 400 o 409
   const status = error.status || 500;

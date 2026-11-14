@@ -310,6 +310,8 @@ El acceso al último capítulo leído deberá lograrse en un máximo de 3 clics 
 
 La interfaz deberá mantener un contraste de colores WCAG AA (mínimo 4.5:1) [[8]](#referencias) y usar botones de alrededor 48 px de alto. Se validará con herramientas automatizadas como WAVE.
 
+**Validación (EF2):** Lighthouse da 100 en accesibilidad en las 5 pantallas medidas. Ver [Mejoras de UI/UX y rendimiento (EF2)](#mejoras-de-uiux-y-rendimiento-ef2).
+
 ---
 
 ### Seguridad
@@ -691,6 +693,7 @@ Las validaciones de ruta (`PrivateRoute`, `RoleRoute`, `PublicOnlyRoute`) actúa
   | Error | Rojo `#B3261E` | 6.5:1 |
   | Fondo | Lavanda claro `#FAF8FD` | — |
   | Texto | `#1F1B2D` | — |
+  | Texto secundario | Gris violáceo `#5F5A6B` | 6.6:1 |
 
 - **Tipografía:** Sans-serif limpia (Inter o Roboto). Tamaño base de 16px y lectura de capítulos a 18px.
 - **Coherencia e Iconografía:** Uso exclusivo de Ionicons [[10]](#referencias). Sistema de espaciado basado en múltiplos de 8px. Botones de alrededor de 48px de alto y esquinas redondeadas.
@@ -717,6 +720,93 @@ Las mismas reglas de alias, correo y contraseña se validan en el backend (`back
 - Retroalimentación al enviar: indicador de carga en el botón y `IonToast` de éxito al crear la cuenta.
 - Reglas de seguridad de la contraseña visibles, con check verde al cumplirse.
 - Error de inicio de sesión ("Correo o contraseña incorrectos.") para no revelar qué correos están registrados.
+
+### Mejoras de UI/UX y rendimiento (EF2)
+
+La aplicación se midió con Lighthouse [[30]](#referencias) en Edge, en una ventana InPrivate, sobre la versión compilada que sirve Docker (`http://localhost:8080`). Las mediciones de "antes" corresponden al commit `09b59f9`, previo a estas mejoras. Además, todas las pantallas se revisaron a mano en anchos de 360, 390, 768, 1280 y 1920 px (RNF-COM-01).
+
+**Mejoras respecto de las entregas anteriores**
+
+| Mejora | Dónde | Para qué |
+| :--- | :--- | :--- |
+| Carga diferida por sección: el login ya no descarga las pantallas del paciente ni las del administrador | `routes/lazySections.tsx` | Menos JavaScript en la primera carga |
+| Los componentes de Ionic que la aplicación no usa quedan fuera del build | `vite.config.ts` | Menos JavaScript en la primera carga |
+| Zoom permitido (antes estaba bloqueado) e idioma `es` en la página | `index.html` | Ampliar la pantalla con baja visión [[31]](#referencias); lectores de pantalla en español |
+| Contraste AA en textos secundarios, botones de segmento y opciones de una decisión tomada | `theme/` | Cumplir el RNF-ACC-01 (mínimo 4.5:1) |
+| Barras de avance con nombre accesible y títulos en orden | Inicio, detalle del libro y recursos | Lectores de pantalla |
+| Descripción de la aplicación y `robots.txt` válido | `index.html`, `public/` | SEO |
+| Pantallas de administración de capítulos, simulaciones y recursos con el mismo diseño de tarjetas que libros y personajes | `/admin/*` | Consistencia visual |
+| Botón *Completar con YouTube* con vista previa del video | Formulario de recursos | Menos escritura y menos errores |
+| Aviso sin conexión, aviso de capítulo desbloqueado y recordatorio de lectura | Paciente | Retroalimentación clara |
+
+**Lighthouse (antes → después)**
+
+| Página | Dispositivo | Rendimiento | Accesibilidad | Buenas prácticas | SEO |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| `/login` | Móvil | 82 → 85 | 94 → **100** | 100 → 100 | 82 → **100** |
+| `/login` | Escritorio | 99 → 100 | 94 → **100** | 100 → 100 | 82 → **100** |
+| `/app/home` | Móvil | 84 → 90 | 87 → **100** | 100 → 100 | 82 → **100** |
+| `/app/decision/1` | Móvil | 86 → 89 | 90 → **100** | 100 → 100 | 82 → **100** |
+| `/admin/resources/create` | Escritorio | 100 → 100 | 90 → **100** | 100 → 100 | 82 → **100** |
+
+El rendimiento de `/login` se midió cargando todo desde cero. Las otras tres páginas se midieron con la sesión iniciada (sin borrar el almacenamiento del navegador), así que su rendimiento es referencial; en ellas lo que se compara es la accesibilidad, las buenas prácticas y el SEO.
+
+**Tiempos de carga de `/login` en móvil** (Lighthouse simula una red 4G lenta y un procesador 4 veces más lento)
+
+| Métrica | Antes | Después |
+| :--- | :---: | :---: |
+| First Contentful Paint | 3.4 s | 3.2 s |
+| Largest Contentful Paint | 3.5 s | 3.4 s |
+| Total Blocking Time | 140 ms | **70 ms** |
+| Cumulative Layout Shift | 0 | 0 |
+| Speed Index | 3.4 s | 3.2 s |
+
+**Cómo se mejoró el rendimiento**
+- **Carga diferida por sección** (`frontend/src/routes/lazySections.tsx`): las pantallas del paciente y las del administrador van en archivos aparte, que se descargan al iniciar sesión según el rol. Se dividió por sección y no por pantalla para que la lectura sin conexión (EF1) siga funcionando al cambiar de pantalla. La sección se descarga antes de navegar, así la transición de Ionic no queda en blanco; si la descarga falla, se muestra un mensaje con el botón *Reintentar*.
+- **Componentes de Ionic sin usar** (`frontend/vite.config.ts`): `@ionic/react` incluía en el build todos sus componentes. Ahora quedan fuera los que la aplicación no usa, como el calendario, el deslizador, el refresco y el botón flotante.
+- **Resultado:** el JavaScript que descarga el login pasó de 342 KB a 269 KB comprimido (−21 %) y el tiempo de bloqueo (*Total Blocking Time*) bajó a la mitad.
+
+**Revisión responsive**
+
+| Pantallas | Anchos | Resultado |
+| :--- | :--- | :--- |
+| Paciente: login, registro, inicio, libro, capítulo, simulación, decisión, recursos, progreso y perfil | 360, 390, 768, 1280 y 1920 px | Sin desbordes ni textos cortados; botones de 48 px de alto; barra inferior en móvil y menú lateral desde 992 px |
+| Administrador: panel, y listas y formularios de libros, personajes, capítulos, simulaciones y recursos | 360, 390, 768, 1280 y 1920 px | Sin desbordes ni textos cortados; formularios en una columna centrada |
+
+| Móvil (390 px) | Web (1280 px) |
+| :---: | :---: |
+| <img src="img/ef2/inicio-movil.png" alt="Pantalla de inicio del paciente en móvil, con la barra de pestañas abajo" width="240"> | <img src="img/ef2/inicio-web.png" alt="Pantalla de inicio del paciente en web, con el menú lateral fijo" width="560"> |
+
+**Login en móvil, antes y después**
+
+![Lighthouse del login en móvil antes de las mejoras: 82, 94, 100 y 82](img/ef2/antes-1-login-movil.png)
+
+![Lighthouse del login en móvil después de las mejoras: 85, 100, 100 y 100](img/ef2/despues-1-login-movil.png)
+
+![Métricas de carga del login en móvil antes de las mejoras](img/ef2/antes-1-login-movil-metricas.png)
+
+![Métricas de carga del login en móvil después de las mejoras](img/ef2/despues-1-login-movil-metricas.png)
+
+<details>
+<summary>Resto de las capturas de Lighthouse</summary>
+
+![Login en escritorio, antes](img/ef2/antes-2-login-escritorio.png)
+
+![Login en escritorio, después](img/ef2/despues-2-login-escritorio.png)
+
+![Inicio del paciente en móvil, antes](img/ef2/antes-3-inicio-movil.png)
+
+![Inicio del paciente en móvil, después](img/ef2/despues-3-inicio-movil.png)
+
+![Decisión en móvil, antes](img/ef2/antes-4-decision-movil.png)
+
+![Decisión en móvil, después](img/ef2/despues-4-decision-movil.png)
+
+![Formulario de recursos del administrador en escritorio, antes](img/ef2/antes-5-admin-recurso-escritorio.png)
+
+![Formulario de recursos del administrador en escritorio, después](img/ef2/despues-5-admin-recurso-escritorio.png)
+
+</details>
 
 ---
 ## Backend y API REST (EP2)
@@ -1333,17 +1423,18 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
     ├── cypress/                 Pruebas end-to-end
     └── src/
         ├── App.tsx              IonApp + IonReactRouter + IonSplitPane (menú lateral en web)
-        ├── routes/              AppRoutes (mapa de rutas) y guardias: PrivateRoute, RoleRoute, PublicOnlyRoute
+        ├── routes/              AppRoutes (mapa de rutas), guardias (PrivateRoute, RoleRoute, PublicOnlyRoute)
+        │                        y lazySections (carga diferida de las secciones)
         ├── layouts/             UserLayout (IonTabs del paciente) y AdminLayout (rutas /admin/*)
         ├── pages/
         │   ├── public/          LoginPage, RegisterPage
         │   ├── user/            Home, BookDetail, Chapter, Simulation, Decision, Resources, Progress, Profile
         │   ├── admin/           AdminHome, AdminBooks, AdminBookForm, AdminCharacters, AdminCharacterForm,
-        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,       AdminResources, AdminResourceForm
+        │   │                    AdminChapters, AdminChapterForm, AdminSimulations, AdminSimulationForm,
+        │   │                    AdminResources, AdminResourceForm
         │   └── common/          Unauthorized, NotFound
         ├── components/          AppMenu, PageHeader, BookCard, ChapterListItem, DecisionOptionCard,
-        │                        MediaPlayer, AdminItemCard, EmptyState, OfflineBanner, OfflineState
-        ├── context/             AuthContext (usuario y rol en sesión)
+        │                        MediaPlayer, AdminItemCard, EmptyState, OfflineBanner, OfflineState,   SectionLoader
         ├── services/            api (Axios e interceptores), session, mappers,authService, bookService,
         │                        characterService, adminContentService, progressService, statsService, storage,
         │                        offlineCache (lectura sin conexión), reminderService (recordatorio de lectura)
@@ -1396,3 +1487,5 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 27. MDN Web Docs. *Navigator: onLine property*. https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
 28. MDN Web Docs. *Window: localStorage property*. https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
 29. Capacitor. *Local Notifications Capacitor Plugin API*. https://capacitorjs.com/docs/apis/local-notifications
+30. Chrome for Developers. *Introduction to Lighthouse*. https://developer.chrome.com/docs/lighthouse/overview
+31. W3C. *Understanding Success Criterion 1.4.4: Resize Text*. https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html

@@ -19,6 +19,8 @@
 - **Notificaciones y almacenamiento local (EF1):** recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión de los capítulos ya abiertos (`frontend/src/services/offlineCache.ts` y `reminderService.ts`).
 - **UI/UX y rendimiento (EF2):** auditoría con Lighthouse antes y después, correcciones de accesibilidad (contraste, zoom e idioma), revisión responsive de 360 a 1920 px y carga diferida de las secciones de la aplicación.
 - **Optimización de consultas (EF4):** 7 índices en las claves foráneas y medición con `EXPLAIN ANALYZE` antes y después (`backend/database/rendimiento-ef4.sql`).
+- **Seguridad avanzada (EF3):** CORS solo para los orígenes configurados, límites de cuentas nuevas y de tamaño de las peticiones, enlaces externos solo con https, y política CSP y cabeceras de seguridad en nginx (`backend/src/app.js`, `frontend/security-headers.conf`).
+
 
 
 ## Índice
@@ -1058,10 +1060,22 @@ sequenceDiagram
 | Ver o modificar datos de otro paciente | El progreso y las decisiones usan el id que viene en el token, nunca uno enviado por el cliente. |
 | Campos no permitidos | Los servicios solo guardan los campos esperados (por ejemplo, el registro ignora `rol`). |
 | Filtración de información | Los errores 500 no muestran detalles internos, el login usa un mensaje genérico y las estadísticas de pacientes muestran solo el alias. |
-| Cabeceras y orígenes | helmet agrega cabeceras HTTP de seguridad [[20]](#referencias), y CORS solo acepta peticiones del frontend (`CORS_ORIGIN`). |
+| Cabeceras y orígenes | helmet agrega cabeceras HTTP de seguridad a las respuestas de la API [[20]](#referencias). CORS solo acepta los orígenes de `CORS_ORIGIN` (uno o varios, separados por coma), con los métodos y encabezados que usa el frontend; si la variable falta, no acepta ninguno y nunca responde "cualquier origen" (`*`). |
+| XSS (código escondido en un texto) | Los textos se guardan tal cual y React los muestra siempre como texto, nunca como HTML: el frontend no usa `dangerouslySetInnerHTML` [[35]](#referencias). Los enlaces de los recursos solo pueden ser videos de YouTube o archivos de audio o video de `/media/` o con `https://`; un enlace `javascript:` o `data:` responde `400`. |
+| Scripts de otros sitios y clickjacking | En Docker, nginx envía una política de seguridad de contenido (CSP) [[34]](#referencias): el navegador solo ejecuta los archivos `.js` de la aplicación, solo muestra videos de `youtube-nocookie.com` y no deja que otro sitio muestre la aplicación dentro de un iframe. También envía `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy` (`frontend/security-headers.conf`). Para que la CSP no necesite excepciones se quitó `@vitejs/plugin-legacy`, que agregaba scripts dentro del HTML para navegadores antiguos en los que Ionic ya no funciona. |
+| Robo del token en el navegador | El token vence en 2 horas y se borra al cerrar sesión o cuando la API responde `401`. La CSP impide que un script inyectado se ejecute y pueda leerlo. |
+| Peticiones enormes | El cuerpo JSON acepta hasta 100 KB, más que el capítulo más largo permitido; uno más grande responde `413`. |
+| Creación masiva de cuentas | Máximo 20 cuentas nuevas por hora desde la misma IP (`429`). Los registros rechazados no suman, así un grupo de pacientes del mismo hospital puede registrarse. |
+| Contenido sin cifrar | Los audios y videos de otros sitios deben usar `https://`. |
 | Operaciones a medias | Se usan transacciones al crear una simulación con sus opciones y al reiniciar el progreso de un libro. |
 | Uso indebido de la clave de YouTube | Solo el administrador puede consultar `/api/youtube`. La clave está en `.env`, restringida a la YouTube Data API v3 en Google Cloud, y viaja en un encabezado, no en la URL. |
 | Secretos en el repositorio | `.env` está en `.gitignore`. Solo se sube `.env.example`, con valores de ejemplo. |
+
+**Pruebas de seguridad (EF3):** la carpeta **13. Seguridad (EF3)** de la colección de Insomnia prueba una inyección SQL en el login y en un filtro, un texto con `<script>` y `DROP TABLE` que se guarda como texto sin dañar la tabla, enlaces `javascript:` y `http://` rechazados, un token sin firma (`alg: none`) rechazado, que el perfil no devuelva `password_hash` y que un sitio no permitido no reciba permiso de CORS. Además, con la CSP activa, un `<script>` o un atributo `onerror` agregados a la página no se ejecutan, y un script de otro sitio no se descarga.
+
+![Carpeta 13. Seguridad (EF3) en el Collection Runner de Insomnia](img/ef3/insomnia-seguridad.png)
+
+![Cabeceras de seguridad que envía nginx, vistas en DevTools](img/ef3/cabeceras-nginx.png)
 
 ### Integración con el frontend
 
@@ -1158,7 +1172,7 @@ El paciente suele leer en el hospital o durante su tratamiento, donde el wifi se
 
 ### Pruebas con Insomnia
 
-La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **91 peticiones** en 13 carpetas, con los casos correctos y los de error de cada módulo, y **107 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
+La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/insomnia-libros-interactivos.json) se importa en Insomnia [[18]](#referencias). Tiene **101 peticiones** en 14 carpetas, con los casos correctos y los de error de cada módulo, y **122 pruebas automáticas** que revisan el código HTTP y, en algunas, el contenido de la respuesta.
 
 - Las peticiones obtienen el token solas desde **Login paciente** o **Login admin**, así que no hay que copiarlo a mano.
 - Las peticiones de editar y eliminar usan el id del registro creado en la misma carpeta.
@@ -1174,6 +1188,7 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 | 10. Errores generales | Ruta inexistente, JSON mal formado e intento de inyección SQL en el id. |
 | 11. Límite de intentos de login | Cinco intentos fallidos con el mismo correo y el sexto bloqueado (429). Si se vuelve a ejecutar antes de 15 minutos, todos responden 429. |
 | 12. YouTube (servicio externo) | Datos de un video (200, o 503 sin `YOUTUBE_API_KEY`), enlace que no es de YouTube (400), paciente (403), sin sesión (401) y recurso con un enlace que no es audio, video ni YouTube (400). |
+| 13. Seguridad (EF3) | Inyección SQL en el login y en un filtro (400), texto con `<script>` y `DROP TABLE` guardado como texto, enlaces `javascript:` y `http://` (400), token sin firma (401), perfil sin `password_hash` y CORS para un sitio no permitido. |
 
 **Cómo ejecutarla:** en Insomnia, **Import** → elegir el archivo. Después, desde el menú de la colección, **Run** (Collection Runner) ejecuta todas las peticiones en orden y muestra cuántas pruebas pasaron.
 
@@ -1211,7 +1226,7 @@ El frontend también tiene pruebas automáticas con Vitest (npm run test.unit --
 | `pg` | ^8.23.1 | Conexión a PostgreSQL y consultas con parámetros [[19]](#referencias). |
 | `bcryptjs` | ^3.0.3 | Encriptación de contraseñas [[14]](#referencias). |
 | `jsonwebtoken` | ^9.0.3 | Creación y verificación de los tokens JWT [[13]](#referencias). |
-| `express-rate-limit` | ^8.7.1 | Límite de intentos fallidos de inicio de sesión [[22]](#referencias). |
+| `express-rate-limit` | ^8.7.1 | Límite de intentos fallidos de inicio de sesión [[22]](#referencias) y de cuentas nuevas. |
 | `express-validator` | ^7.3.2 | Validación de los datos de entrada [[16]](#referencias). |
 | `helmet` | ^8.3.0 | Cabeceras HTTP de seguridad [[20]](#referencias). |
 | `cors` | ^2.8.6 | Permite que solo el frontend llame a la API. |
@@ -1481,7 +1496,8 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 │   │   ├── app.js               Express: helmet, CORS, JSON, rutas y manejo de errores
 │   │   ├── config/              db.js (pool de conexiones a PostgreSQL)
 │   │   ├── routes/              Rutas de cada módulo e index.js, que las une bajo /api
-│   │   ├── middlewares/         auth.js (verificarToken, permitirRoles), limiteLogin.js, validate.js, errorHandler.js
+│   │   ├── middlewares/         auth.js (verificarToken, permitirRoles), limiteLogin.js, limiteRegistro.js,
+│   │   │                        validate.js, errorHandler.js
 │   │   ├── validators/          Reglas de validación de cada módulo
 │   │   ├── controllers/         Reciben la petición y arman la respuesta
 │   │   ├── services/            Consultas SQL con parámetros
@@ -1493,6 +1509,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
     ├── .env.example             URL de la API (opcional)
     ├── Dockerfile               Compila con Node y sirve con nginx
     ├── nginx.conf               Sirve el frontend y reenvía /api a la API
+    ├── security-headers.conf    Cabeceras de seguridad y política CSP que envía nginx 
     ├── cypress/                 Pruebas end-to-end
     └── src/
         ├── App.tsx              IonApp + IonReactRouter + IonSplitPane (menú lateral en web)
@@ -1564,3 +1581,5 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 31. W3C. *Understanding Success Criterion 1.4.4: Resize Text*. https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html
 32. PostgreSQL. *Using EXPLAIN*. https://www.postgresql.org/docs/current/using-explain.html
 33. PostgreSQL. *Constraints: Foreign Keys* (índices en las columnas que hacen referencia). https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK
+34. MDN Web Docs. *Content Security Policy (CSP)*. https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+35. OWASP. *Cross Site Scripting Prevention Cheat Sheet*. https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html

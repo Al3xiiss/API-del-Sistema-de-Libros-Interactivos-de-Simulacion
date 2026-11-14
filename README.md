@@ -17,7 +17,7 @@
 - **Servicio externo (EF5):** integración con la YouTube Data API para verificar los videos y obtener su duración, y botón *Completar con YouTube* en el formulario de recursos.
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
 - **Notificaciones y almacenamiento local (EF1):** recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión de los capítulos ya abiertos (`frontend/src/services/offlineCache.ts` y `reminderService.ts`).
-
+- **UI/UX y rendimiento (EF2):** auditoría con Lighthouse antes y después, correcciones de accesibilidad (contraste, zoom e idioma), revisión responsive de 360 a 1920 px y carga diferida de las secciones de la aplicación.
 
 ## Índice
 1. [Descripción general del sistema](#descripción-general-del-sistema)
@@ -36,6 +36,7 @@
     - [Puntos críticos de interacción](#puntos-críticos-de-interacción)
     - [Justificación Técnica](#justificación-técnica)
 6. [Bocetos UX/UI](#bocetos-uiux)
+    - [Mejoras de UI/UX y rendimiento (EF2)](#mejoras-de-uiux-y-rendimiento-ef2)
 7. [Backend y API REST (EP2)](#backend-y-api-rest-ep2)
     - [Arquitectura del backend](#arquitectura-del-backend)
     - [Base de datos](#base-de-datos)

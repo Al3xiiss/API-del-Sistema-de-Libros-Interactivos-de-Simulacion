@@ -18,6 +18,8 @@
 - **Documentación y gestión:** README, documentación de la API, pruebas en Insomnia, ramas y evidencia de avance.
 - **Notificaciones y almacenamiento local (EF1):** recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión de los capítulos ya abiertos (`frontend/src/services/offlineCache.ts` y `reminderService.ts`).
 - **UI/UX y rendimiento (EF2):** auditoría con Lighthouse antes y después, correcciones de accesibilidad (contraste, zoom e idioma), revisión responsive de 360 a 1920 px y carga diferida de las secciones de la aplicación.
+- **Optimización de consultas (EF4):** 7 índices en las claves foráneas y medición con `EXPLAIN ANALYZE` antes y después (`backend/database/rendimiento-ef4.sql`).
+
 
 ## Índice
 1. [Descripción general del sistema](#descripción-general-del-sistema)
@@ -40,6 +42,7 @@
 7. [Backend y API REST (EP2)](#backend-y-api-rest-ep2)
     - [Arquitectura del backend](#arquitectura-del-backend)
     - [Base de datos](#base-de-datos)
+    - [Optimización de consultas (EF4)](#optimización-de-consultas-ef4)
     - [API REST](#api-rest)
     - [Autenticación y roles](#autenticación-y-roles)
     - [Seguridad de la API](#seguridad-de-la-api)
@@ -925,7 +928,76 @@ erDiagram
 - **CHECK:** largo mínimo del alias, del título y de la sinopsis; rol `patient` o `admin`; tipo de recurso `video` o `audio`; número de capítulo y duración positivos.
 - **Clave foránea compuesta** en `decisiones (opcion_id, simulacion_id)`: garantiza que la opción elegida pertenece a esa simulación.
 - **Claves primarias compuestas** en `progreso_capitulos` y `decisiones`: un registro por paciente y capítulo, y una decisión por paciente y simulación.
+- **Índices** en las claves foráneas que se usan para filtrar, contar y borrar en cascada. Ver [Optimización de consultas (EF4)](#optimización-de-consultas-ef4).
 - Las contraseñas de los usuarios de prueba están guardadas como hash de bcrypt, nunca en texto plano.
+
+### Optimización de consultas (EF4)
+
+Las consultas de la API están en `backend/src/services/`. Se escribieron para que PostgreSQL haga el trabajo y la respuesta lleve solo lo necesario:
+
+| Práctica | Dónde se ve |
+| :--- | :--- |
+| **Filtros en SQL**, no en JavaScript: las listas aceptan `?libro_id=` o `?capitulo_id=` y se filtran con `WHERE` | `GET /capitulos`, `/personajes`, `/simulaciones` y `/recursos` |
+| **Relaciones con `JOIN`** en una sola consulta, sin una consulta extra por cada fila | Un recurso trae su capítulo y su libro; el progreso trae los libros, los capítulos y las decisiones del paciente en una consulta |
+| **Totales calculados por PostgreSQL** con `COUNT` | `total_capitulos`, `total_recursos`, `total_opciones` y las estadísticas del panel |
+| **Listas livianas:** la lista no trae el contenido largo; el detalle sí | La lista de capítulos no trae `contenido`; la de simulaciones trae `total_opciones` en vez de las opciones |
+| **Sin datos sensibles ni innecesarios** | `password_hash` solo se lee para comparar en el login y nunca se envía; la lista de pacientes del panel no incluye correos |
+| **Transacciones** en las operaciones de varios pasos | Crear una simulación con sus opciones; reiniciar el progreso de un libro |
+| **Respuestas consistentes** | Siempre `{ data }` o `{ error, detalles }`; los errores de PostgreSQL se traducen a mensajes claros |
+| **Respuestas comprimidas** | En Docker, nginx comprime con gzip el JSON de la API y los archivos del frontend |
+
+**Índices**
+
+PostgreSQL crea un índice para cada clave primaria y cada `UNIQUE`, pero no para las claves foráneas [[33]](#referencias). Sin índice, buscar las opciones de una simulación o borrar un capítulo obliga a recorrer tablas completas. Por eso `database.sql` agrega 7 índices:
+
+| Índice | Columnas | Para qué |
+| :--- | :--- | :--- |
+| `idx_opciones_simulacion` | `opciones_simulacion (simulacion_id)` | Opciones de una simulación y `total_opciones` |
+| `idx_recursos_capitulo` | `recursos (capitulo_id)` | Recursos de un capítulo y `total_recursos` |
+| `idx_personajes_capitulo` | `personajes (capitulo_id)` | Personajes de un capítulo |
+| `idx_simulaciones_personaje` | `simulaciones (personaje_id)` | Al borrar un personaje, dejar sus simulaciones sin personaje |
+| `idx_progreso_capitulo` | `progreso_capitulos (capitulo_id)` | Al borrar un capítulo, borrar el progreso de los pacientes |
+| `idx_decisiones_simulacion` | `decisiones (simulacion_id)` | Al borrar una simulación, borrar sus decisiones |
+| `idx_decisiones_opcion` | `decisiones (opcion_id, simulacion_id)` | Al borrar una opción, borrar las decisiones que la eligieron |
+
+Las demás búsquedas ya tenían índice. Por ejemplo, los capítulos de un libro usan el de `UNIQUE (libro_id, numero)` y el progreso de un paciente usa su clave primaria `(usuario_id, capitulo_id)`.
+
+**Medición con `EXPLAIN ANALYZE`** [[32]](#referencias)
+
+Con los datos de prueba (11 capítulos) las tablas son tan pequeñas que PostgreSQL las recorre completas y no se nota la diferencia. Por eso el script [`backend/database/rendimiento-ef4.sql`](backend/database/rendimiento-ef4.sql) carga datos a mayor escala (200 libros, 20.000 capítulos, 80.000 opciones, 60.000 recursos, 2.000 pacientes y 100.000 decisiones), mide las consultas de la API sin los 7 índices y con ellos, y muestra la comparación. Todo ocurre dentro de una transacción que se deshace al final (`ROLLBACK`), así que la base de datos queda igual.
+
+Para ejecutarlo con Docker (PowerShell, desde la raíz del repositorio):
+
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    docker compose cp backend/database/rendimiento-ef4.sql db:/tmp/rendimiento-ef4.sql
+    docker compose exec db psql -U postgres -d libros_interactivos -f /tmp/rendimiento-ef4.sql
+
+| # | Consulta del script | Endpoint de la API |
+| :--- | :--- | :--- |
+| 1 | Opciones de una simulación | `GET /simulaciones/:id` |
+| 2 | Simulaciones de un libro y sus opciones | `GET /simulaciones?libro_id=` |
+| 3 | Capítulos de un libro y sus recursos | `GET /capitulos?libro_id=` |
+| 4 | Recursos de un capítulo | `GET /recursos?capitulo_id=` |
+| 5 | Personajes de un capítulo | `GET /personajes?capitulo_id=` |
+| 6 | Borrar una opción ya elegida | `DELETE /simulaciones/:id/opciones/:opcionId` |
+| 7 | Borrar un capítulo leído | `DELETE /capitulos/:id` |
+
+Resultado en PostgreSQL 18 (Docker), en milisegundos, mediana de 3 mediciones:
+
+| # | Consulta | Antes | ms | Después | ms | Más rápida |
+| :--- | :--- | :--- | ---: | :--- | ---: | ---: |
+| 1 | Opciones de una simulación | Seq Scan | 4.140 | Index Scan · `idx_opciones_simulacion` | 0.061 | 68x |
+| 2 | Simulaciones de un libro y sus opciones | Seq Scan | 546.495 | Index Only Scan · `idx_opciones_simulacion` | 3.570 | 153x |
+| 3 | Capítulos de un libro y sus recursos | Seq Scan | 368.537 | Bitmap Heap Scan · `idx_recursos_capitulo` | 3.546 | 104x |
+| 4 | Recursos de un capítulo | Seq Scan | 3.402 | Bitmap Heap Scan · `idx_recursos_capitulo` | 0.165 | 21x |
+| 5 | Personajes de un capítulo | Seq Scan | 1.047 | Index Scan · `idx_personajes_capitulo` | 0.146 | 7x |
+| 6 | Borrar una opción ya elegida | Borrado en cascada | 5.379 | Borrado en cascada | 0.133 | 40x |
+| 7 | Borrar un capítulo leído | Borrado en cascada | 37.795 | Borrado en cascada | 0.761 | 50x |
+
+![Resultado del script rendimiento-ef4.sql en la terminal](img/ef4/rendimiento-ef4.png)
+
+Cómo leer la tabla: `Seq Scan` recorre la tabla completa; `Index Scan`, `Index Only Scan` y `Bitmap Heap Scan` usan el índice que aparece después del punto. Las consultas que más mejoran son las que cuentan opciones o recursos por cada capítulo de un libro (2 y 3): sin índice, PostgreSQL recorre la tabla completa una vez por cada capítulo.
+
 
 ### API REST
 
@@ -1398,7 +1470,8 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 ├── .env.example                 Variables de Docker Compose (copiar como .env)
 ├── backend/
 │   ├── database/
-│   │   └── database.sql         Tablas, restricciones y datos de prueba
+│   │   ├── database.sql         Tablas, restricciones, índices y datos de prueba
+│   │   └── rendimiento-ef4.sql  Medición de los índices con EXPLAIN ANALYZE (EF4)│
 │   ├── docs/
 │   │   ├── endpoints.md         Documentación de la API
 │   │   ├── insomnia-libros-interactivos.json   Colección de pruebas
@@ -1489,3 +1562,5 @@ El código fue revisado, adaptado, probado y modificado por el equipo, que tambi
 29. Capacitor. *Local Notifications Capacitor Plugin API*. https://capacitorjs.com/docs/apis/local-notifications
 30. Chrome for Developers. *Introduction to Lighthouse*. https://developer.chrome.com/docs/lighthouse/overview
 31. W3C. *Understanding Success Criterion 1.4.4: Resize Text*. https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html
+32. PostgreSQL. *Using EXPLAIN*. https://www.postgresql.org/docs/current/using-explain.html
+33. PostgreSQL. *Constraints: Foreign Keys* (índices en las columnas que hacen referencia). https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK

@@ -2,7 +2,7 @@
 -- Motor: PostgreSQL
 
 -- Paso 1 (una sola vez): crear la base de datos.
---   En pgAdmin: clic derecho en Databases → Create → Database... → libros_interactivos
+--   En pgAdmin: clic derecho en Databases , Create , Database... , libros_interactivos
 --   o ejecutar esta línea conectado a la base "postgres":
 -- CREATE DATABASE libros_interactivos;
 
@@ -62,6 +62,7 @@ CREATE TABLE simulaciones (
   pregunta     VARCHAR(200) NOT NULL
 );
 
+-- 6. opciones de cada simulación
 CREATE TABLE opciones_simulacion (
   id            SERIAL       PRIMARY KEY,
   simulacion_id INTEGER      NOT NULL REFERENCES simulaciones(id) ON DELETE CASCADE,
@@ -100,6 +101,17 @@ CREATE TABLE decisiones (
   PRIMARY KEY (usuario_id, simulacion_id),             
   FOREIGN KEY (opcion_id, simulacion_id) REFERENCES opciones_simulacion(id, simulacion_id) ON DELETE CASCADE
 );
+
+-- 10. Índices 
+-- Estos índices cubren las claves foráneas que la API usa para filtrar, unir tablas o contar,
+-- y las que revisa PostgreSQL al borrar en cascada. Medición: database/rendimiento-ef4.sql
+CREATE INDEX IF NOT EXISTS idx_opciones_simulacion    ON opciones_simulacion (simulacion_id);   -- opciones de una simulación y su total
+CREATE INDEX IF NOT EXISTS idx_recursos_capitulo      ON recursos (capitulo_id);                -- recursos de un capítulo y su total
+CREATE INDEX IF NOT EXISTS idx_personajes_capitulo    ON personajes (capitulo_id);              -- personajes de un capítulo
+CREATE INDEX IF NOT EXISTS idx_simulaciones_personaje ON simulaciones (personaje_id);           -- al borrar un personaje (SET NULL)
+CREATE INDEX IF NOT EXISTS idx_progreso_capitulo      ON progreso_capitulos (capitulo_id);      -- al borrar un capítulo
+CREATE INDEX IF NOT EXISTS idx_decisiones_simulacion  ON decisiones (simulacion_id);            -- al borrar una simulación
+CREATE INDEX IF NOT EXISTS idx_decisiones_opcion      ON decisiones (opcion_id, simulacion_id); -- al borrar una opción
 
 -- Datos de prueba (los mismos de la EP1)
 -- Contraseñas: Paciente123 y Admin12345

@@ -20,6 +20,7 @@
 - **UI/UX y rendimiento (EF2):** auditoría con Lighthouse antes y después, correcciones de accesibilidad (contraste, zoom e idioma), revisión responsive de 360 a 1920 px y carga diferida de las secciones de la aplicación.
 - **Optimización de consultas (EF4):** 7 índices en las claves foráneas y medición con `EXPLAIN ANALYZE` antes y después (`backend/database/rendimiento-ef4.sql`).
 - **Seguridad avanzada (EF3):** CORS solo para los orígenes configurados, límites de cuentas nuevas y de tamaño de las peticiones, enlaces externos solo con https, y política CSP y cabeceras de seguridad en nginx (`backend/src/app.js`, `frontend/security-headers.conf`).
+- **Documentación final (EF):** requerimientos RF-13 a RF-23, matriz de trazabilidad y evolución del proyecto entre entregas.
 
 
 
@@ -27,6 +28,7 @@
 1. [Descripción general del sistema](#descripción-general-del-sistema)
     - [Objetivos](#objetivos-del-proyecto)
     - [Principales funcionalidades](#principales-funcionalidades)
+    - [Evolución del proyecto entre entregas](#evolución-del-proyecto-cambios-y-correcciones-entre-entregas)
 2. [Justificación del problema](#justificación-del-problema)
     - [Análisis de soluciones existentes](#análisis-de-soluciones-existentes)
 3. [Usuarios](#usuarios-objetivo-quién-usará-la-aplicación)
@@ -34,6 +36,7 @@
     - [Proto-personas](#proto-personas)
     - [Supuestos](#supuestos-utilizados)
 4. [Requerimientos](#requerimientos)
+    - [Matriz de trazabilidad](#matriz-de-trazabilidad)
 5. [Arquitectura de la Información/ UX](#arquitectura-de-navegación)
     - [Diferenciación x roles](#diferenciación-de-acceso-según-roles)
     - [Flujos principales Tareas](#flujos-de-tareas)
@@ -64,11 +67,13 @@
 11. [Referencias](#referencias)
 
 ## Descripción general del sistema
-El Sistema de Libros Interactivos de Simulación es una aplicación multiplataforma (web y móvil) desarrollada con Ionic + React que acompaña emocionalmente a pacientes en tratamiento oncológico mediante historias narrativas. El paciente lee libros organizados en capítulos, participa en simulaciones donde un personaje enfrenta situaciones cotidianas, toma decisiones que cambian el desenlace, reproduce recursos multimedia de apoyo y revisa su progreso. Los administradores (psicooncólogos) gestionan los libros y los personajes desde un panel propio.
+El Sistema de Libros Interactivos de Simulación es una aplicación multiplataforma (web y móvil) desarrollada con Ionic + React que acompaña emocionalmente a pacientes en tratamiento oncológico mediante historias narrativas. El paciente lee libros organizados en capítulos, participa en simulaciones donde un personaje enfrenta situaciones cotidianas, toma decisiones que cambian el desenlace, reproduce recursos multimedia de apoyo y revisa su progreso. Los administradores (psicooncólogos) gestionan los libros, capítulos, personajes, simulaciones y recursos multimedia desde un panel propio.
 
 **Alcance de la Entrega Parcial 1:** frontend navegable con rutas públicas y protegidas, separación por roles y versiones móvil y web, con datos simulados.
 
 **Alcance de la Entrega Parcial 2:** backend en Node.js + Express con base de datos PostgreSQL; API REST con CRUD de libros, capítulos, personajes, simulaciones, recursos, progreso y decisiones; autenticación con JWT y control de roles; contraseñas encriptadas con bcrypt, validación de datos y protección contra inyección SQL. El frontend reemplaza los datos simulados por llamadas a la API con Axios e interceptores, y la API se prueba con una colección de Insomnia (ver [Backend y API REST](#backend-y-api-rest-ep2)).
+
+**Alcance de la Entrega Final:** panel de administración completo (capítulos, simulaciones con sus opciones y recursos multimedia); notificaciones y lectura sin conexión (EF1); mejoras de accesibilidad y rendimiento medidas con Lighthouse (EF2); seguridad avanzada con CORS restringido, límites de peticiones y política CSP (EF3); índices en la base de datos medidos con `EXPLAIN ANALYZE` (EF4); integración con la YouTube Data API (EF5) y despliegue con Docker. Los cambios entre entregas se resumen en [Evolución del proyecto](#evolución-del-proyecto-cambios-y-correcciones-entre-entregas).
 
 ### Objetivos del proyecto
 **Objetivo general**
@@ -80,14 +85,14 @@ Desarrollar una aplicación web y móvil que centralice el acompañamiento emoci
 2. Diseñar un prototipo UI/UX en Figma, en versiones móvil y web, coherente con las necesidades de accesibilidad de los pacientes.
 3. Implementar en Ionic + React una arquitectura de navegación con rutas públicas, rutas protegidas y diferenciación de acceso por rol.
 4. Permitir que el paciente lea capítulos, participe en simulaciones, tome decisiones, reproduzca recursos multimedia y consulte su propio progreso.
-5. Permitir que el administrador gestione el catálogo de libros y los personajes que participan en las simulaciones.
+5. Permitir que el administrador gestione el catálogo de libros, sus capítulos, los personajes, las simulaciones con sus opciones de decisión y los recursos multimedia de apoyo.
 6. Proteger la identidad del paciente mediante el uso de alias, mensajes de error que no revelan información y acceso a estadísticas únicamente propias.
 
 ### Principales funcionalidades
 | Funcionalidad | Rol | Requerimiento |
 | :--- | :--- | :--- |
 | Biblioteca con "Continúa donde lo dejaste" y buscador | Paciente | RF-04 |
-| Lectura por capítulos con desbloqueo progresivo | Paciente | RF-04 |
+| Lectura por capítulos con desbloqueo progresivo y aviso del capítulo desbloqueado | Paciente | RF-04 |
 | Simulación con personaje y contexto narrativo | Paciente | RF-05 |
 | Toma de decisiones con confirmación y consecuencia | Paciente | RF-06 |
 | Reproductor de recursos multimedia (audio/video) | Paciente y Administrador | RF-07 |
@@ -95,7 +100,56 @@ Desarrollar una aplicación web y móvil que centralice el acompañamiento emoci
 | Resumen global de la plataforma | Administrador | RF-09 |
 | Crear, editar y eliminar libros | Administrador | RF-01, RF-02 y RF-03 |
 | Crear, editar y eliminar personajes asociados a capítulos | Administrador | RF-10, RF-11 y RF-12 |
+| Crear, editar y eliminar capítulos de un libro | Administrador | RF-13, RF-14 y RF-15 |
+| Crear, editar y eliminar simulaciones con sus opciones de decisión | Administrador | RF-16, RF-17 y RF-18 |
+| Crear, editar y eliminar recursos multimedia, con verificación de los videos de YouTube | Administrador | RF-19, RF-20 y RF-21 |
+| Recordatorio diario de lectura | Paciente | RF-22 |
+| Lectura sin conexión de los capítulos ya abiertos | Paciente | RF-23 |
 | Registro, inicio y cierre de sesión con control por rol | Todos | FT-01 a FT-04 |
+
+### Evolución del proyecto: cambios y correcciones entre entregas
+
+El proyecto se construyó en tres entregas. Cada una partió de la anterior y corrigió lo observado en la retroalimentación o en las pruebas del equipo. El historial completo está en los commits de la rama `backend`.
+
+| Entrega | Fecha | Qué se entregó |
+| :--- | :--- | :--- |
+| Entrega Parcial 1 (EP1) | Septiembre de 2026 | Frontend en Ionic + React con datos simulados, rutas públicas y protegidas, separación por rol, versiones móvil y web, y bocetos en Figma. Siete requerimientos funcionales agrupados (por ejemplo, *Gestión de libros*). |
+| Entrega Parcial 2 (EP2) | Octubre de 2026 | API REST con Node.js + Express y PostgreSQL (9 tablas), autenticación con JWT y roles, CRUD de todos los módulos, colección de Insomnia y `endpoints.md`. El frontend dejó los datos simulados y pasó a usar la API con Axios e interceptores. Recursos con videos de YouTube. |
+| Entrega Final (EF) | Noviembre de 2026 | Correcciones de seguridad de la EP2, pantallas de administración que faltaban, despliegue con Docker y las mejoras EF1 a EF5. |
+
+**De la EP1 a la EP2: correcciones según la retroalimentación de la EP1** (commit `fb52672`)
+
+| Observación | Corrección |
+| :--- | :--- |
+| Cada requerimiento agrupaba varias funcionalidades. Por ejemplo, *RF-01 Gestión de libros* incluía crear, editar y eliminar. | Se reescribieron con una sola funcionalidad cada uno y la estructura producto + verbo + necesidad. Los 7 requerimientos pasaron a 12: libros quedó como RF-01 Crear, RF-02 Editar y RF-03 Eliminar; personajes como RF-10, RF-11 y RF-12; y la consulta de progreso se separó en RF-08 (avance propio del paciente) y RF-09 (resumen de la plataforma para el administrador). Los comentarios del código se actualizaron a la nueva numeración. |
+| La compatibilidad (RNF-COM-01) solo decía "web adaptable a móvil y escritorio", sin navegadores ni versiones. | RNF-COM-01 indica la versión mínima de cada navegador (Chrome y Edge 111, Firefox 114, Safari 16.4), que coincide con el objetivo de compilación de Vite, y el ancho mínimo de pantalla. |
+
+**De la EP2 a la EF: correcciones de seguridad y de alcance**
+
+Al revisar la EP2 se encontraron casos en que la API confiaba en el frontend o en el token. Se corrigieron antes de agregar funciones nuevas:
+
+| Problema | Corrección | Commit |
+| :--- | :--- | :--- |
+| La base de datos aceptaba un correo o un color de portada con formato inválido si alguien se saltaba la API. | Restricciones `CHECK` en `usuarios.email` y `libros.color_portada`. | `5fa602e` |
+| El desbloqueo progresivo de capítulos se controlaba solo en el frontend: con Insomnia se podía completar un capítulo sin haber terminado el anterior. | La API responde `409` si el capítulo anterior no está completado. | `2d93ac9` |
+| El rol se leía del token: si un administrador pasaba a paciente, mantenía sus permisos hasta que el token vencía. | `verificarToken` lee el rol vigente desde la base de datos en cada petición. | `6bc8c0b` |
+| El login aceptaba intentos ilimitados, lo que permitía adivinar contraseñas por fuerza bruta. | Después de 5 intentos fallidos con el mismo correo desde la misma IP, la API responde `429` durante 15 minutos. | `18b610b` |
+| Un `JWT_SECRET` corto o el valor de ejemplo permitían falsificar tokens. | La API no inicia si `JWT_SECRET` tiene menos de 32 caracteres o es el valor de ejemplo. | `98aceac` |
+| La colección de Insomnia no probaba estos casos. | Pruebas de `409` y `429`. | `f883b2a` |
+| Las rutas de administración de capítulos, simulaciones y recursos estaban planificadas, pero no tenían pantallas. Además, `/app/characters` y `/admin/progress` no correspondían a ningún requerimiento. | Se implementaron las pantallas de capítulos, simulaciones (con sus opciones) y recursos (RF-13 a RF-21). `/app/characters` y `/admin/progress` pasaron a trabajo futuro. | `c62892a`, `edb7fde`, `dc32680` |
+
+**Entrega Final: funciones y mejoras nuevas**
+
+| Mejora | Qué agrega | Detalle |
+| :--- | :--- | :--- |
+| Pantallas de administración | Gestión de capítulos, simulaciones y recursos (RF-13 a RF-21) y pruebas de los interceptores de Axios con Vitest | [Rutas del administrador](#rutas-protegidas-del-administrador) |
+| Despliegue | Base de datos, API y frontend con Docker Compose; nginx sirve el frontend y reenvía `/api` | [Despliegue con Docker](#despliegue-con-docker) |
+| EF1: Notificaciones y almacenamiento local | Recordatorio diario de lectura, aviso de capítulo desbloqueado, aviso sin conexión y lectura sin conexión (RF-22 y RF-23) | [EF1](#notificaciones-y-almacenamiento-local-ef1) |
+| EF2: UI/UX y rendimiento | Accesibilidad y SEO de Lighthouse en 100, carga diferida por sección y 21 % menos JavaScript en el login | [EF2](#mejoras-de-uiux-y-rendimiento-ef2) |
+| EF3: Seguridad avanzada | CORS solo para los orígenes configurados, límites de cuentas nuevas (`429`) y de tamaño de las peticiones (`413`), enlaces externos solo con https, y política CSP y cabeceras de seguridad en nginx | [EF3](#seguridad-de-la-api) |
+| EF4: Optimización de consultas | 7 índices en las claves foráneas; consultas hasta 153 veces más rápidas con datos a mayor escala | [EF4](#optimización-de-consultas-ef4) |
+| EF5: Servicio externo | YouTube Data API para verificar los videos y completar su título y duración | [EF5](#servicio-externo-youtube-data-api-ef5) |
+| Documentación | 23 requerimientos funcionales (RF-13 a RF-23 son nuevos) y una matriz de trazabilidad | [Matriz de trazabilidad](#matriz-de-trazabilidad) |
 
 ---
 ## Justificación del problema
@@ -215,6 +269,8 @@ Leer historias de personajes que atraviesan situaciones similares a la suya y to
 - Tomar decisión (RF-06).
 - Reproducir recurso multimedia (RF-07).
 - Consultar progreso propio (RF-08).
+- Programar recordatorio de lectura (RF-22).
+- Leer sin conexión (RF-23).
 
 #### Dispositivo y contexto probable de acceso
 
@@ -250,6 +306,9 @@ Crear un libro, definir los personajes que participan en sus simulaciones y revi
 - Reproducir recurso multimedia (RF-07).
 - Consultar resumen de la plataforma (RF-09).
 - Crear, editar y eliminar personajes (RF-10, RF-11 y RF-12).
+- Crear, editar y eliminar capítulos (RF-13, RF-14 y RF-15).
+- Crear, editar y eliminar simulaciones (RF-16, RF-17 y RF-18).
+- Crear, editar y eliminar recursos multimedia (RF-19, RF-20 y RF-21).
 
 #### Dispositivo y contexto probable de acceso
 
@@ -276,7 +335,7 @@ Los perfiles anteriores se construyeron a partir de los siguientes supuestos:
 | **RF-01** | Crear libro | El sistema deberá permitir al administrador **crear** un libro interactivo con título y sinopsis, para publicar nuevo contenido de apoyo emocional. | Administrador | Estar autenticado como administrador. | 1. Accede a "Gestión de libros".<br>2. Presiona "Nuevo libro".<br>3. Completa título y sinopsis.<br>4. Presiona "Guardar". | El libro aparece en el catálogo y se muestra el mensaje "Libro creado." |
 | **RF-02** | Editar libro | El sistema deberá permitir al administrador **editar** el título y la sinopsis de un libro existente, para corregir o actualizar el contenido publicado. | Administrador | Estar autenticado como administrador y que el libro exista. | 1. Accede a "Gestión de libros".<br>2. Presiona "Editar" en el libro.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El libro se actualiza en el catálogo y se muestra el mensaje "Libro actualizado." |
 | **RF-03** | Eliminar libro | El sistema deberá permitir al administrador **eliminar** un libro, previa confirmación, para retirar contenido que ya no corresponde publicar. | Administrador | Estar autenticado como administrador y que el libro exista. | 1. Accede a "Gestión de libros".<br>2. Presiona "Eliminar" en el libro.<br>3. Confirma en el cuadro de diálogo. | El libro deja de estar disponible junto con sus capítulos y simulaciones, y se muestra el mensaje "Libro eliminado." |
-| **RF-04** | Leer capítulo | El sistema deberá permitir al paciente **leer** los capítulos de un libro en orden, desbloqueando cada uno al completar el anterior, para avanzar en la historia a su propio ritmo. | Usuario/Paciente | Tener sesión iniciada y un libro seleccionado. | 1. Abre el libro desde "Mis libros".<br>2. Selecciona un capítulo disponible.<br>3. Lee y presiona "Siguiente". | El capítulo queda guardado como última lectura y, al terminarlo, se desbloquea el siguiente. |
+| **RF-04** | Leer capítulo | El sistema deberá permitir al paciente **leer** los capítulos de un libro en orden, desbloqueando cada uno al completar el anterior, para avanzar en la historia a su propio ritmo. | Usuario/Paciente | Tener sesión iniciada y un libro seleccionado. | 1. Abre el libro desde "Mis libros".<br>2. Selecciona un capítulo disponible.<br>3. Lee y presiona "Siguiente". | El capítulo queda guardado como última lectura y, al terminarlo, se desbloquea el siguiente y se muestra el aviso "Desbloqueaste el capítulo N: título". |
 | **RF-05** | Iniciar simulación | El sistema deberá permitir al paciente **iniciar** la simulación de un capítulo, mostrando el personaje y el contexto, para situarse en el escenario narrativo antes de decidir. | Usuario/Paciente | Estar en un capítulo que termina en simulación. | 1. Presiona "Ir a la simulación".<br>2. Revisa el personaje y el contexto.<br>3. Presiona "Iniciar simulación". | La interfaz cambia al modo de toma de decisión. |
 | **RF-06** | Tomar decisión | El sistema deberá permitir al paciente **registrar** su decisión, eligiendo y confirmando una de las opciones de la simulación, para conocer su consecuencia y explorar escenarios en un entorno seguro. | Usuario/Paciente | Simulación iniciada con opciones en pantalla. | 1. Lee la pregunta.<br>2. Selecciona una tarjeta de opción.<br>3. Presiona "Confirmar decisión". | Se guarda la decisión, se muestra su consecuencia y se desbloquea el siguiente capítulo. |
 | **RF-07** | Reproducir recurso multimedia | El sistema deberá permitir al paciente y al administrador **reproducir** los videos y audios de apoyo de cada capítulo, para complementar la lectura con ejercicios de relajación y contenido visual. | Usuario/Paciente y Administrador | Tener sesión iniciada y que el capítulo tenga recursos. | 1. Presiona la pestaña "Recursos" o "Ver recursos del capítulo".<br>2. Selecciona un recurso.<br>3. Presiona reproducir. | El recurso se reproduce mostrando su avance y duración. |
@@ -285,17 +344,62 @@ Los perfiles anteriores se construyeron a partir de los siguientes supuestos:
 | **RF-10** | Crear personaje | El sistema deberá permitir al administrador **crear** un personaje con nombre, descripción, atributos y capítulo asociado, para que participe en las simulaciones de ese capítulo. | Administrador | Estar autenticado como administrador y que exista al menos un capítulo. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Nuevo personaje".<br>3. Completa los datos y elige el capítulo.<br>4. Presiona "Guardar". | El personaje queda disponible para las simulaciones del capítulo y se muestra el mensaje "Personaje creado." |
 | **RF-11** | Editar personaje | El sistema deberá permitir al administrador **editar** los datos o el capítulo asociado de un personaje existente, para mantener coherente la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Editar" en el personaje.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El personaje se actualiza y se muestra el mensaje "Personaje actualizado." |
 | **RF-12** | Eliminar personaje | El sistema deberá permitir al administrador **eliminar** un personaje, previa confirmación, para retirarlo de la historia. | Administrador | Estar autenticado como administrador y que el personaje exista. | 1. Accede a "Gestión de personajes".<br>2. Presiona "Eliminar" en el personaje.<br>3. Confirma en el cuadro de diálogo. | El personaje se elimina, las simulaciones donde aparecía muestran un personaje genérico y se muestra el mensaje "Personaje eliminado." |
+| **RF-13** | Crear capítulo | El sistema deberá permitir al administrador **crear** un capítulo de un libro con número, título y contenido, para ampliar la historia que leen los pacientes. | Administrador | Estar autenticado como administrador y que exista al menos un libro. | 1. Accede a "Gestión de capítulos" y elige el libro.<br>2. Presiona "Nuevo capítulo".<br>3. Completa título y contenido; si deja vacío el número, se usa el siguiente del libro.<br>4. Presiona "Guardar". | El capítulo aparece en la lista del libro y se muestra el mensaje "Capítulo creado." Si el libro ya tiene un capítulo con ese número, se muestra un mensaje de error y no se guarda. |
+| **RF-14** | Editar capítulo | El sistema deberá permitir al administrador **editar** el número, el título o el contenido de un capítulo existente, para corregir o mejorar el texto de la historia. | Administrador | Estar autenticado como administrador y que el capítulo exista. | 1. Accede a "Gestión de capítulos" y elige el libro.<br>2. Presiona "Editar" en el capítulo.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El capítulo se actualiza y se muestra el mensaje "Capítulo actualizado." |
+| **RF-15** | Eliminar capítulo | El sistema deberá permitir al administrador **eliminar** un capítulo, previa confirmación, para retirarlo de la historia. | Administrador | Estar autenticado como administrador y que el capítulo exista. | 1. Accede a "Gestión de capítulos" y elige el libro.<br>2. Presiona "Eliminar" en el capítulo.<br>3. Confirma en el cuadro de diálogo, que advierte qué más se eliminará. | El capítulo se elimina junto con sus personajes, su simulación, sus recursos y el progreso de los pacientes en él, y se muestra el mensaje "Capítulo eliminado." |
+| **RF-16** | Crear simulación | El sistema deberá permitir al administrador **crear** la simulación de un capítulo, con contexto, pregunta, un personaje opcional y entre 2 y 4 opciones con su consecuencia, para que el paciente tome una decisión al final del capítulo. | Administrador | Estar autenticado como administrador y que el capítulo todavía no tenga simulación (máximo una por capítulo). | 1. Accede a "Gestión de simulaciones".<br>2. Presiona "Nueva simulación".<br>3. Elige el capítulo y, si quiere, el personaje.<br>4. Escribe el contexto, la pregunta y de 2 a 4 opciones con su consecuencia.<br>5. Presiona "Guardar". | La simulación y sus opciones se guardan juntas, en una sola transacción, y se muestra el mensaje "Simulación creada." Si el capítulo ya tiene una simulación, se muestra un mensaje de error y no se guarda nada. |
+| **RF-17** | Editar simulación | El sistema deberá permitir al administrador **editar** el contexto, la pregunta, el personaje y las opciones de una simulación (modificar, agregar o quitar opciones, siempre entre 2 y 4), para ajustar el escenario de decisión. | Administrador | Estar autenticado como administrador y que la simulación exista. | 1. Accede a "Gestión de simulaciones".<br>2. Presiona "Editar" en la simulación.<br>3. Modifica los datos precargados y, si quiere, presiona "Agregar opción" o "Quitar".<br>4. Presiona "Guardar". | La simulación y sus opciones se actualizan y se muestra el mensaje "Simulación actualizada." |
+| **RF-18** | Eliminar simulación | El sistema deberá permitir al administrador **eliminar** una simulación, previa confirmación, para retirar un escenario de decisión que ya no corresponde. | Administrador | Estar autenticado como administrador y que la simulación exista. | 1. Accede a "Gestión de simulaciones".<br>2. Presiona "Eliminar" en la simulación.<br>3. Confirma en el cuadro de diálogo. | La simulación se elimina junto con sus opciones y las decisiones que tomaron los pacientes, y se muestra el mensaje "Simulación eliminada." |
+| **RF-19** | Crear recurso multimedia | El sistema deberá permitir al administrador **crear** un video o audio de apoyo asociado a un capítulo, con título, descripción, enlace y duración, para complementar la lectura con ejercicios y contenido visual. | Administrador | Estar autenticado como administrador y que exista al menos un capítulo. | 1. Accede a "Gestión de recursos".<br>2. Presiona "Nuevo recurso".<br>3. Elige el tipo (video o audio) y el capítulo, y completa el título y el enlace.<br>4. Si el enlace es de YouTube, puede presionar "Completar con YouTube" para obtener el título y la duración.<br>5. Presiona "Guardar". | El recurso aparece en la lista y en los recursos del capítulo, y se muestra el mensaje "Recurso creado." Si el video de YouTube no existe, es privado o no se puede reproducir fuera de YouTube, se muestra un mensaje de error y no se guarda. |
+| **RF-20** | Editar recurso multimedia | El sistema deberá permitir al administrador **editar** los datos o el capítulo de un recurso existente, para reemplazar un enlace o corregir su información. | Administrador | Estar autenticado como administrador y que el recurso exista. | 1. Accede a "Gestión de recursos".<br>2. Presiona "Editar" en el recurso.<br>3. Modifica los datos precargados.<br>4. Presiona "Guardar". | El recurso se actualiza y se muestra el mensaje "Recurso actualizado." Un video de YouTube se vuelve a verificar al guardar. |
+| **RF-21** | Eliminar recurso multimedia | El sistema deberá permitir al administrador **eliminar** un recurso, previa confirmación, para retirar contenido que ya no corresponde publicar. | Administrador | Estar autenticado como administrador y que el recurso exista. | 1. Accede a "Gestión de recursos".<br>2. Presiona "Eliminar" en el recurso.<br>3. Confirma en el cuadro de diálogo. | El recurso deja de aparecer en el capítulo y se muestra el mensaje "Recurso eliminado." |
+| **RF-22** | Programar recordatorio de lectura | El sistema deberá permitir al paciente **programar** un recordatorio diario de lectura a la hora que elija, para retomar la historia aunque pase días sin abrir la aplicación. | Usuario/Paciente | Tener sesión iniciada y un navegador que permita notificaciones. | 1. Accede a "Perfil".<br>2. Activa "Recordarme leer cada día" y permite las notificaciones del navegador.<br>3. Elige la "Hora del aviso". | Se muestra el mensaje "Te recordaremos leer todos los días a las HH:MM." y cada día, a esa hora, llega la notificación "¿Seguimos con la historia?" mientras la aplicación esté abierta. |
+| **RF-23** | Leer sin conexión | El sistema deberá permitir al paciente **leer** sin conexión los libros y capítulos que ya abrió, para continuar la lectura cuando se corta el internet, por ejemplo en el hospital. | Usuario/Paciente | Tener sesión iniciada y haber abierto antes el capítulo con conexión. | 1. Pierde la conexión a internet.<br>2. Abre un libro o un capítulo que ya había abierto. | Se muestra el aviso "Sin conexión. Puedes seguir leyendo los capítulos que ya abriste." y el capítulo se lee desde la copia guardada en el dispositivo. Si nunca lo abrió, se indica que todavía no está guardado. La copia se borra al cerrar sesión. |
 
 ---
 
 ### Funcionalidades Transversales
 
-Las siguientes funcionalidades son necesarias para el funcionamiento general de la aplicación pero no forman parte de los siete requerimientos funcionales principales.
+Las siguientes funcionalidades son necesarias para el funcionamiento general de la aplicación pero no forman parte de los requerimientos funcionales principales.
 
 - **FT-01:** El sistema deberá permitir a un visitante **registrarse** como paciente (`/register`), para acceder a los libros con una cuenta propia.
 - **FT-02:** El sistema deberá permitir a los usuarios **iniciar sesión** con su correo y contraseña (`/login`), para acceder a las funciones de su rol.
 - **FT-03:** El sistema deberá permitir **cerrar** la sesión activa (desde "Perfil" o el menú lateral), para proteger la cuenta en dispositivos compartidos.
 - **FT-04:** El sistema deberá **restringir** las funcionalidades según el rol del usuario autenticado (Usuario/Paciente o Administrador), para que cada usuario acceda solo a lo que le corresponde.
+
+### Matriz de trazabilidad
+
+Relaciona cada requerimiento con la pantalla que lo cumple, el endpoint de la API que usa y la prueba que lo verifica. Los números de Insomnia son las carpetas de la colección (ver [Pruebas con Insomnia](#pruebas-con-insomnia)); los endpoints van después de `/api`.
+
+| Requerimiento | Pantalla (ruta) | Endpoint de la API | Prueba |
+| :--- | :--- | :--- | :--- |
+| RF-01 Crear libro | `/admin/books/create` | `POST /libros` | Insomnia 2 |
+| RF-02 Editar libro | `/admin/books/:id/edit` | `PUT /libros/:id` | Insomnia 2 |
+| RF-03 Eliminar libro | `/admin/books` | `DELETE /libros/:id` | Insomnia 2 |
+| RF-04 Leer capítulo | `/app/home`, `/app/books/:id`, `/app/chapters/:id` | `GET /libros`, `GET /capitulos/:id`, `PUT /progreso/capitulos/:id` | Insomnia 3 y 7 (`409` si el capítulo anterior no está completado) |
+| RF-05 Iniciar simulación | `/app/simulation/:id` | `GET /simulaciones/:id` | Insomnia 5 |
+| RF-06 Tomar decisión | `/app/decision/:id` | `PUT /decisiones/:simulacionId` | Insomnia 8 |
+| RF-07 Reproducir recurso multimedia | `/app/resources`, `/app/chapters/:id/resources` | `GET /recursos` | Insomnia 6 |
+| RF-08 Consultar progreso propio | `/app/progress` | `GET /progreso` | Insomnia 7 |
+| RF-09 Consultar resumen de la plataforma | `/admin` | `GET /estadisticas` | Insomnia 9 |
+| RF-10 Crear personaje | `/admin/characters/create` | `POST /personajes` | Insomnia 4 |
+| RF-11 Editar personaje | `/admin/characters/:id/edit` | `PUT /personajes/:id` | Insomnia 4 |
+| RF-12 Eliminar personaje | `/admin/characters` | `DELETE /personajes/:id` | Insomnia 4 |
+| RF-13 Crear capítulo | `/admin/chapters/create` | `POST /capitulos` | Insomnia 3 |
+| RF-14 Editar capítulo | `/admin/chapters/:id/edit` | `PUT /capitulos/:id` | Insomnia 3 |
+| RF-15 Eliminar capítulo | `/admin/chapters` | `DELETE /capitulos/:id` | Insomnia 3 |
+| RF-16 Crear simulación | `/admin/simulations/create` | `POST /simulaciones` (con sus opciones, en una transacción) | Insomnia 5 |
+| RF-17 Editar simulación | `/admin/simulations/:id/edit` | `PUT /simulaciones/:id` y `POST`, `PUT` o `DELETE /simulaciones/:id/opciones` | Insomnia 5 |
+| RF-18 Eliminar simulación | `/admin/simulations` | `DELETE /simulaciones/:id` | Insomnia 5 |
+| RF-19 Crear recurso multimedia | `/admin/resources/create` | `POST /recursos`, `GET /youtube/video` | Insomnia 6, 12 y 13 |
+| RF-20 Editar recurso multimedia | `/admin/resources/:id/edit` | `PUT /recursos/:id`, `GET /youtube/video` | Insomnia 6 y 12 |
+| RF-21 Eliminar recurso multimedia | `/admin/resources` | `DELETE /recursos/:id` | Insomnia 6 |
+| RF-22 Programar recordatorio de lectura | `/app/profile` | No usa la API: la preferencia se guarda en el dispositivo | Vitest `reminderService.test.ts` |
+| RF-23 Leer sin conexión | `/app/books/:id`, `/app/chapters/:id` | Copia local de las respuestas de `GET /libros`, `/capitulos`, `/simulaciones`, `/personajes` y `/progreso` | Vitest `offlineCache.test.ts` |
+| FT-01 Registrarse | `/register` | `POST /auth/register` | Insomnia 1 |
+| FT-02 Iniciar sesión | `/login` | `POST /auth/login` | Insomnia 1 y 11, Cypress |
+| FT-03 Cerrar sesión | `/app/profile` y menú lateral | No usa la API: borra el token y la copia local | Vitest `api.test.ts` y `offlineCache.test.ts` |
+| FT-04 Restringir por rol | Guardias `PrivateRoute`, `RoleRoute` y `PublicOnlyRoute` | `verificarToken` y `permitirRoles` en las rutas de la API | Insomnia 1 a 7, 9 y 13 (`401` y `403`), Cypress |
 
 ---
 
@@ -400,13 +504,14 @@ La aplicación considera rutas públicas, una ruta común y rutas protegidas. La
 | `/admin/characters/create` | Crear personaje | Creación de un personaje y asociación a un capítulo. |
 | `/admin/characters/:id/edit` | Editar personaje | Edición de un personaje existente. |
 | `/admin/chapters` | Gestión de capítulos | Capítulos del libro elegido con acciones editar y eliminar. |
-| /admin/chapters/create | Crear capítulo | Creación de un capítulo; si no se indica el número, se usa el siguiente. |
-| /admin/chapters/:id/edit | Editar capítulo | Edición de un capítulo existente. |
-| /admin/simulations/create | Crear simulación | Creación de una simulación con 2 a 4 opciones de decisión. |
-| /admin/simulations/:id/edit | Editar simulación | Edición de la simulación y de sus opciones. |
-| /admin/resources | Gestión de recursos | Videos y audios de apoyo con acciones editar y eliminar. |
-| /admin/resources/create | Crear recurso | Creación de un recurso asociado a un capítulo. |
-| /admin/resources/:id/edit | Editar recurso | Edición de un recurso existente. |
+| `/admin/chapters/create` | Crear capítulo | Creación de un capítulo; si no se indica el número, se usa el siguiente. |
+| `/admin/chapters/:id/edit` | Editar capítulo | Edición de un capítulo existente. |
+| `/admin/simulations` | Gestión de simulaciones | Simulaciones de todos los libros con acciones editar y eliminar. |
+| `/admin/simulations/create` | Crear simulación | Creación de una simulación con 2 a 4 opciones de decisión. |
+| `/admin/simulations/:id/edit` | Editar simulación | Edición de la simulación y de sus opciones. |
+| `/admin/resources` | Gestión de recursos | Videos y audios de apoyo con acciones editar y eliminar. |
+| `/admin/resources/create` | Crear recurso | Creación de un recurso asociado a un capítulo, con el botón *Completar con YouTube*. |
+| `/admin/resources/:id/edit` | Editar recurso | Edición de un recurso existente. |
 
 **Fuera del alcance de la Entrega Final (trabajo futuro):** una galería de personajes para el paciente (`/app/characters`) y una pantalla de avance por paciente para el administrador (`/admin/progress`). No corresponden a ningún requerimiento funcional, ya que el paciente conoce a cada personaje en su simulación (RF-05), y el administrador ve el uso general de la plataforma en su panel (RF-09). La API ya ofrece `GET /api/personajes` y `GET /api/estadisticas/pacientes`, así que se podrían agregar más adelante sin cambiar el backend.
 
@@ -532,6 +637,17 @@ La aplicación controla el acceso a las diferentes funcionalidades de acuerdo co
 | **RF-10: Crear personaje** | Sin acceso | Acceso total |
 | **RF-11: Editar personaje** | Sin acceso | Acceso total |
 | **RF-12: Eliminar personaje** | Sin acceso | Acceso total |
+| **RF-13: Crear capítulo** | Sin acceso | Acceso total |
+| **RF-14: Editar capítulo** | Sin acceso | Acceso total |
+| **RF-15: Eliminar capítulo** | Sin acceso | Acceso total |
+| **RF-16: Crear simulación** | Sin acceso | Acceso total |
+| **RF-17: Editar simulación** | Sin acceso | Acceso total |
+| **RF-18: Eliminar simulación** | Sin acceso | Acceso total |
+| **RF-19: Crear recurso multimedia** | Sin acceso | Acceso total |
+| **RF-20: Editar recurso multimedia** | Sin acceso | Acceso total |
+| **RF-21: Eliminar recurso multimedia** | Sin acceso | Acceso total |
+| **RF-22: Programar recordatorio de lectura** | Acceso total | No aplica |
+| **RF-23: Leer sin conexión** | Acceso total | No aplica |
 
 ---
 
@@ -546,6 +662,8 @@ Podrá:
 - participar en simulaciones y tomar decisiones
 - reproducir recursos multimedia de apoyo
 - consultar su propio progreso
+- activar un recordatorio diario de lectura
+- seguir leyendo sin conexión los capítulos que ya abrió
 - revisar su perfil y cerrar sesión
 
 ---
@@ -558,6 +676,9 @@ Podrá:
 
 - gestionar libros (crear, editar, eliminar)
 - gestionar personajes y asociarlos a capítulos
+- gestionar los capítulos de cada libro
+- gestionar simulaciones con sus opciones de decisión
+- gestionar recursos multimedia (videos y audios), con verificación de los videos de YouTube
 - revisar la navegación de capítulos y probar simulaciones
 - reproducir recursos multimedia
 - consultar un resumen global de la plataforma (libros, capítulos, personajes y pacientes registrados)
@@ -625,7 +746,7 @@ Presiona "Continuar leyendo" o vuelve al inicio
 
 **Rol:** Administrador
 
-**Objetivo:** registrar un nuevo libro y los personajes que participarán en sus simulaciones.
+**Objetivo:** registrar un nuevo libro con sus capítulos, personajes, simulaciones y recursos de apoyo.
 
 ```text
 Inicio de sesión (/login)
@@ -634,7 +755,13 @@ Accede al panel de administración (/admin)
       ↓
 Crea el libro base (/admin/books/create)
       ↓
+Agrega los capítulos del libro (/admin/chapters/create)
+      ↓
 Crea un personaje y lo asocia a un capítulo (/admin/characters/create)
+      ↓
+Crea la simulación del capítulo con sus opciones (/admin/simulations/create)
+      ↓
+Agrega videos o audios de apoyo (/admin/resources/create)
       ↓
 Guarda y revisa el resultado en la vista del paciente (/app/home)
 
@@ -1198,7 +1325,7 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 
 ![Un paciente intenta crear un libro y la API responde 403](backend/docs/evidencias/insomnia-403.png)
 
-El frontend también tiene pruebas automáticas con Vitest (npm run test.unit -- --run dentro de frontend, 9 pruebas). frontend/src/services/api.test.ts revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
+El frontend también tiene pruebas automáticas con Vitest (`npm run test.unit -- --run` dentro de `frontend/`): 25 pruebas en 3 archivos. `frontend/src/services/api.test.ts` (9 pruebas) revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
 
 ![Pruebas de los interceptores con Vitest: 9 de 9](img/ef/vitest-interceptor.png)
 ![Gestión de simulaciones en el panel de administración](img/ef/admin-simulaciones.png)
@@ -1461,7 +1588,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 
 ### Evidencia de despliegue local
 
-![Docker Compose construye las imágenes y levanta los tres servicios](img/docker/docker-compose-up.png)
+![Docker Compose construye las imágenes y levanta los tres servicios](img/docker/docker-compose-ps.png)
 
 ![Docker Desktop con los contenedores db, api y frontend en ejecución](img/docker/docker-desktop.png)
 
@@ -1542,7 +1669,7 @@ Conforme a lo permitido por la pauta, el equipo utilizó asistentes de inteligen
 - **EP1:** para revisar la documentación frente a la rúbrica y generar una base inicial del código del frontend.
 - **EP2:** para guiar paso a paso la construcción del backend (servidor, base de datos, autenticación y CRUD) y generar una base del código de los módulos, de la integración con Axios, de la colección de Insomnia y de la documentación de la API.
 
-- **EF:** para guiar paso a paso las correcciones de seguridad de la API y la configuración de Docker (Dockerfiles, nginx y docker-compose), que el equipo creó, ejecutó y probó en sus equipos.
+- **EF:** para guiar paso a paso las correcciones de seguridad de la API, la configuración de Docker (Dockerfiles, nginx y docker-compose) y las mejoras EF1 a EF5: notificaciones y lectura sin conexión, carga diferida y correcciones de accesibilidad, índices y script de medición, CORS, límites y política CSP, integración con YouTube, y pruebas de Insomnia y Vitest. También para redactar y revisar la documentación del README. El equipo ejecutó y probó todo en sus equipos (Docker, Lighthouse, Insomnia y el navegador).
 
 El código fue revisado, adaptado, probado y modificado por el equipo, que también ejecutó las pruebas en Insomnia y en el navegador. Los bocetos y prototipos de Figma se construyeron manualmente.
 

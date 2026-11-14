@@ -1325,9 +1325,9 @@ La colección [`backend/docs/insomnia-libros-interactivos.json`](backend/docs/in
 
 ![Un paciente intenta crear un libro y la API responde 403](backend/docs/evidencias/insomnia-403.png)
 
-El frontend también tiene pruebas automáticas con Vitest (`npm run test.unit -- --run` dentro de `frontend/`): 25 pruebas en 3 archivos. `frontend/src/services/api.test.ts` (9 pruebas) revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
+El frontend también tiene pruebas automáticas con Vitest (`npm run test.unit -- --run` dentro de `frontend/`): 25 pruebas en 4 archivos. `frontend/src/services/api.test.ts` (8 pruebas) revisa los interceptores de Axios sin llamar a la API real: que se envíe el token, que los errores 400, 409 y 429 y la falta de conexión se conviertan en mensajes claros, y que un 401 con sesión la cierre y vuelva al login. Además hay pruebas end-to-end de rutas y roles con Cypress (npm run test.e2e, con el backend y el frontend corriendo).
 
-![Pruebas de los interceptores con Vitest: 9 de 9](img/ef/vitest-interceptor.png)
+![Pruebas de Vitest al agregar las de los interceptores: 9 de 9](img/ef/vitest-interceptor.png)
 ![Gestión de simulaciones en el panel de administración](img/ef/admin-simulaciones.png)
 ![Formulario de una simulación con sus opciones de decisión](img/ef/admin-simulaciones-form.png)
 
@@ -1598,7 +1598,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 
 ![Panel de administración en la aplicación servida con Docker](img/docker/docker-app-admin.png)
 
-![Colección de Insomnia contra Docker: 100 de 100 pruebas](img/docker/docker-insomnia-runner.png)
+![Colección de Insomnia contra Docker, antes de agregar las pruebas de YouTube y de seguridad: 100 de 100 pruebas](img/docker/docker-insomnia-runner.png)
 
 ---
 
@@ -1613,7 +1613,7 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 ├── backend/
 │   ├── database/
 │   │   ├── database.sql         Tablas, restricciones, índices y datos de prueba
-│   │   └── rendimiento-ef4.sql  Medición de los índices con EXPLAIN ANALYZE (EF4)│
+│   │   └── rendimiento-ef4.sql  Medición de los índices con EXPLAIN ANALYZE (EF4)
 │   ├── docs/
 │   │   ├── endpoints.md         Documentación de la API
 │   │   ├── insomnia-libros-interactivos.json   Colección de pruebas
@@ -1627,16 +1627,16 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
 │   │   │                        validate.js, errorHandler.js
 │   │   ├── validators/          Reglas de validación de cada módulo
 │   │   ├── controllers/         Reciben la petición y arman la respuesta
-│   │   ├── services/            Consultas SQL con parámetros
+│   │   ├── services/            Consultas SQL con parámetros y youtube.service (YouTube Data API)
 │   │   └── utils/               httpError, pgErrors (errores de PostgreSQL), transaccion
 │   ├── .env.example             Plantilla de variables de entorno
-│   ├── Dockerfile               Imagen de la API    
+│   ├── Dockerfile               Imagen de la API
 │   └── package.json
 └── frontend/
     ├── .env.example             URL de la API (opcional)
     ├── Dockerfile               Compila con Node y sirve con nginx
     ├── nginx.conf               Sirve el frontend y reenvía /api a la API
-    ├── security-headers.conf    Cabeceras de seguridad y política CSP que envía nginx 
+    ├── security-headers.conf    Cabeceras de seguridad y política CSP que envía nginx (EF3)
     ├── cypress/                 Pruebas end-to-end
     └── src/
         ├── App.tsx              IonApp + IonReactRouter + IonSplitPane (menú lateral en web)
@@ -1651,8 +1651,8 @@ Después, abrir **http://localhost:8080** e iniciar sesión con las [cuentas de 
         │   │                    AdminResources, AdminResourceForm
         │   └── common/          Unauthorized, NotFound
         ├── components/          AppMenu, PageHeader, BookCard, ChapterListItem, DecisionOptionCard,
-        │                        MediaPlayer, AdminItemCard, EmptyState, OfflineBanner, OfflineState,   SectionLoader
-        ├── services/            api (Axios e interceptores), session, mappers,authService, bookService,
+        │                        MediaPlayer, AdminItemCard, EmptyState, OfflineBanner, OfflineState, SectionLoader
+        ├── services/            api (Axios e interceptores), session, mappers, authService, bookService,
         │                        characterService, adminContentService, progressService, statsService, storage,
         │                        offlineCache (lectura sin conexión), reminderService (recordatorio de lectura)
         ├── hooks/               usePageEnter (recarga datos al volver a una página), useOnlineStatus,
